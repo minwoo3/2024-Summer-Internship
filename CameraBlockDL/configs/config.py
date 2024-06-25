@@ -8,6 +8,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))) # import st_intern_hyunkunkim sys path
 from CameraBlockDL.miscs.pformat import pprint
 import CameraBlockDL.miscs.js2py as js2py
+# 쉘 명령 등 다른 프로세스를 실행하고 출력 결과를 가져올 수 있게 해주는 라이브러리
 import subprocess
 from CameraBlockDL.configs.templates import default_config
 
@@ -31,7 +32,6 @@ def save_cfg(ed, verbose=True):
         pprint(f"[save_cfg] config {ed.id} saved", ["okgreen"])
 
     return None
-
 
 def load_cfg(cid, verbose=True, pythonic=True):
     if f"{cid}.json" not in os.listdir(f"{file_dir}/archived"):
@@ -70,6 +70,9 @@ def create_config(manual=True, verbose=True, backbone="beomjun_model_middle", ta
     save_cfg(config_dict, verbose=False)
 
     if manual:
+        # subprocess.call(args, *, stdin=None, stdout=None, stderr=None, shell=False, timeout=None)
+        # args : 쉘에 입력할 명령어 문자열을 공백 문자로 나눈 문자열 리스트
+        # shell : 별도의 서브 쉘을 실행하고 그 위에서 명령을 실행할 지 여부를 지정, shell=True 로 사용하는 경우 args는 리스트가 아닌 문자열 형태로 쓰는게 좋음.
         subprocess.call(f"gedit {file_dir}/archived/{config_id}.json", shell=True)
         config_dict = load_cfg(config_id, verbose=False)
 

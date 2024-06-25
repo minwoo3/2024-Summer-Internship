@@ -8,6 +8,8 @@ from miscs.pformat import pprint
 from CameraBlockDL.model.export import export
 from pygit2 import Repository
 
+# realpath(): 현재 파일의 표준 경로 + 이름 반환
+# dirname(): 입력 경로의 폴더 경로 반환
 dir_path = os.path.dirname(os.path.realpath(__file__))
 load_cfg_id = [
 ]
@@ -24,6 +26,7 @@ if __name__ == "__main__":
                   f"{dir_path}/train/archived",
                   f"{dir_path}/model/exported",]
 
+    #isdir(): 폴더 유무 판단
     for dir_check in dir_checks:
         if not os.path.isdir(dir_check):
             pprint(f"no archive file in '{dir_check}', creating directory", ["HEADER"])
@@ -36,9 +39,9 @@ if __name__ == "__main__":
 
     while m in ["y", "Y", "yes", "Yes"] or m == "":
         backbone = input("provide backbone name [beomjun_model_middle, mobilenet_v2, efficientnet_b0, googlenet, no_pool, etc.]: \n")
+        #??
         repo = Repository('.').head.shorthand
-        tag = input(
-            "provide tag name (ex: PER-XYZ), default 0: \n")
+        tag = input("provide tag name (ex: PER-XYZ), default 0: \n")
         if backbone == "":
             backbone = "beomjun_model_middle"
         if tag == "":

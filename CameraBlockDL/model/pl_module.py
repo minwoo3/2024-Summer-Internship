@@ -1,7 +1,7 @@
 import os
 import sys
 import torch
-import pytorch_lightning as pl
+import lightning as pl
 from CameraBlockDL.model.nn_model import _model
 from CameraBlockDL.miscs.pformat import pprint
 
@@ -17,7 +17,7 @@ BlockageClassificationModule은 딥러닝 네트워크 (nn.Module) 뿐 아니라
 학습시, 검증시, 테스트시, 테스트 완료 시 어떻게 할지에 대한 정보도 담겨 있음.
 어떠한 손실함수를 쓸 지 부터, 학습 도중 어떠한 값을 로그에 남길지,
 테스트 완료시에는 어떠한 시각화를 할 지 등을 여기에 지정할 수 있음.
-이후 Trainer 객체가 학습, 검증, 테스트를 할 경우 여기에 있는 절차데로 하게 됨.
+이후 Trainer 객체가 학습, 검증, 테스트를 할 경우 여기에 있는 절차대로 하게 됨.
 """
 
 

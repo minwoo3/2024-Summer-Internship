@@ -2,7 +2,8 @@
 
 from easydict import EasyDict as edict
 from copy import deepcopy
-from TrafficlightClassificationDL.miscs.pformat import pprint
+# from TrafficlightClassificationDL.miscs.pformat import pprint
+from CameraBlockDL.miscs.pformat import pprint
 
 
 def convert_string(str_val, sformat):

@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-import pytorch_lightning as pl
+import lightning as pl
 from easydict import EasyDict as edict
 import numpy as np
 from CameraBlockDL.configs.config import save_cfg

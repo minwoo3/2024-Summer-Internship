@@ -1,23 +1,25 @@
 import torch
 import os
 import sys
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+import lightning as pl
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 
 import os
 
 from CameraBlockDL.model.pl_module import BlockageClassificationModule as block_module
 from CameraBlockDL.model.pl_module import get_module
 from CameraBlockDL.data.dataset import DataModule
-from pytorch_lightning.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint
 from CameraBlockDL.miscs.pformat import pprint
 
 # monitor_criteria = ['val_loss/dataloader_idx_1', 'val_loss/dataloader_idx_0']
 
 # devel = True
 devel = False
+# float32 행렬 곱셈의 내부 정밀도를 반환
 torch.set_float32_matmul_precision('medium')
 def train(cfg):
+    # torch.manual_seed : 난수생성을 위한 시드 설정
     torch.manual_seed(cfg.seed)
 
     train_dir = f"{cfg.train.dirpath}/{cfg.id}"
@@ -33,7 +35,8 @@ def train(cfg):
 
     min_epochs = cfg.train.min_epochs
     max_epochs = cfg.train.max_epochs
-
+    # Trainer(): Automatically enabling/disabling grads / Running the training, validation and test dataloaders
+    # Calling the Callbacks at the appropriate times / Putting batches and computations on the correct devices
     trainer = pl.Trainer(callbacks=[EarlyStopping(monitor=cfg.train.monitor, patience=cfg.train.patience), checkpoint_callback],
                          fast_dev_run=devel,
                          min_epochs=min_epochs,

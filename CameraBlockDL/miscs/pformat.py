@@ -10,7 +10,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-
+# 터미널 메세지의 색 변경
 def pprint(msg, options=[]):
     if len(options) == 0:
         print(msg)
@@ -18,6 +18,7 @@ def pprint(msg, options=[]):
 
     for option in options:
         option = option.upper()
+        # getattr(object,'name') object 내부의 name이라는 멤버를 호출
         msg = f"{getattr(bcolors, option)}{msg}"
 
     print(f"{msg}{bcolors.ENDC}")

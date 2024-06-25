@@ -3,7 +3,7 @@
 # TODO. 테스트 셋에 대한 평가 진행
 import sys
 sys.path.append('/home/ampere_2way_2/Perception-CodeVault')
-import pytorch_lightning as pl
+import lightning as pl
 import torch
 from torchvision import transforms
 import numpy as np
