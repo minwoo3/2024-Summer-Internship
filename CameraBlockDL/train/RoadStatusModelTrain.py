@@ -70,7 +70,6 @@ if __name__ == "__main__" :
         for epoch in range(epochs):
             model.train()
             running_loss, corr = 0, 0
-            progress_bar = tqdm()
             progress_bar = tqdm(train_dl, desc = f'Epoch {epoch +1}/{epochs}')
             for img, label in progress_bar:
                 img, label = img.to(device), label.to(device)
@@ -88,11 +87,4 @@ if __name__ == "__main__" :
         end_time = time.time()
         duration = end_time - start_time
         result_save_dir = front_path + '/2024-Summer-Internship/CameraBlockDL/result'
-        torch.save(model, result_save_dir + 'model.pt')
-        
-        x = np.arange(1, epochs)
-        plt.plot(x, running_loss_log)
-        plt.xlim(min(x), max(x))
-        plt.ylim(0, max(running_loss_log))
-        plt.title(f'running_loss, training time: {duration}')
-        plt.savefig('running_loss.png')
+        torch.save(model, result_save_dir + f'{time.time()}_model.pt')
