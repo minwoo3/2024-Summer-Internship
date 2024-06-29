@@ -38,14 +38,19 @@ def main(nia_img_dir, cbtree_img_dir ,clean_csv_save_dir, dirty_csv_save_dir):
         for scene in scenes:
             cbtree_scenes.append([f'{day}/{scene}'])
 
-    nia_train_scenes = list(np.random.choice(nia_scenes, int(len(nia_scenes)*nia_train_ratio)))
+    nia_train_scenes = list(np.random.choice(nia_scenes, int(len(nia_scenes)*nia_train_ratio), replace = False))
     nia_rest_scenes = [x for x in nia_scenes if x not in nia_train_scenes]
-    nia_val_scenes = list(np.random.choice(nia_rest_scenes, int(len(nia_scenes)*nia_val_ratio)))
+    nia_val_scenes = list(np.random.choice(nia_rest_scenes, int(len(nia_scenes)*nia_val_ratio), replace = False))
     nia_test_scenes = [x for x in nia_rest_scenes if x not in nia_val_scenes]
-    print(len(nia_scenes))
+
+    cbtree_train_scenes = list(np.random.choice(cbtree_scenes, int(len(cbtree_scenes)*cbtree_train_ratio), replace = False))
+    cbtree_val_scenes = [x for x in cbtree_scenes if x not in cbtree_train_scenes]
+    cbtree_test_scenes = cbtree_val_scenes
+    
+    # print(len(nia_scenes))
     # print(len(nia_train_scenes))
-    print(len(nia_rest_scenes))
-    print(len(nia_test_scenes))
+    # print(len(nia_rest_scenes))
+    # print(len(nia_test_scenes))
     # with open(clean_csv_save_dir,'w',newline="") as file:
     #     writer = csv.writer(file)
     #     writer.writerows(nia_scenes)
