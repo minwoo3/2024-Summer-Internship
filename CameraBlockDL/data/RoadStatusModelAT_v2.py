@@ -75,7 +75,9 @@ def main(nia_img_dir, cbtree_img_dir ,clean_csv_save_dir, dirty_csv_save_dir):
             cbtree_scenes.append(f'{day}/{scene}')
 
     nia_train_scenes = list(np.random.choice(nia_scenes, int(len(nia_scenes)*nia_train_ratio), replace = False))
+    nia_train_scenes = list(np.random.choice(nia_scenes, int(len(nia_scenes)*nia_train_ratio), replace = False))
     nia_rest_scenes = [x for x in nia_scenes if x not in nia_train_scenes]
+    nia_val_scenes = list(np.random.choice(nia_rest_scenes, int(len(nia_scenes)*nia_val_ratio), replace = False))
     nia_val_scenes = list(np.random.choice(nia_rest_scenes, int(len(nia_scenes)*nia_val_ratio), replace = False))
     nia_test_scenes = [x for x in nia_rest_scenes if x not in nia_val_scenes]
 

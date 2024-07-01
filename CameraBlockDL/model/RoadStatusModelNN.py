@@ -4,6 +4,7 @@ import torch
 class CNNModel(nn.Module):
     def __init__(self):
         super(CNNModel, self).__init__()
+        self.featuremap = None
         self.sequential = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1), 
             nn.ReLU(),
@@ -25,6 +26,7 @@ class CNNModel(nn.Module):
     
     def forward(self, x):
         x = self.sequential(x)
+        self.featuremap = x
         x = torch.flatten(x, 1)
         x = self.fc(x)
         return x

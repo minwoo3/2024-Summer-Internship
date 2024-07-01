@@ -18,8 +18,10 @@ class RoadStatusDataset(Dataset):
             self.label = [1 for _ in range(len(self.img_path))]
 
         self.transform = transforms.Compose([
-            transforms.Resize((180, 320)),
-            transforms.ToTensor()
+            # transforms.Resize((180, 320)),
+            transforms.Resize((720, 1280)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.247, 0.243, 0.261)),
         ])
     def __getitem__(self, idx):
         im = pil.open(self.img_path[idx])
