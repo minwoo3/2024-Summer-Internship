@@ -101,12 +101,16 @@ if fn_list:
 
 if fp_list:
     print(fp_list)
-    
+
     # folder_path = '/home/rideflux/2024-Summer-Internship/CameraBlockDL/result/FalseNegative'
     # file_count = len(os.listdir(folder_path))
     # for path in fn_list:
     #     img = pil.open(path)
     #     img.save(f'fn_image_{file_count}.jpg')
+
+
+
+
 # True Positive: 5987, True Negative: 2943, False Positive: 3, False Negative: 7
 # Accuracy : 99.88814317673378%, Recall : 99.88321654988322%, Specificity : 99.89816700610999%, Precision = 99.94991652754591, f1 = 0.9991655540720961
 

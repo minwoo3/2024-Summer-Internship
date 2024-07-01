@@ -10,6 +10,7 @@ from torch.utils.data import Dataset, DataLoader, random_split
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from model.RoadStatusModelNN import CNNModel, conv_block, BottleNeck, ResNet50
 from data.RoadStatusModelDS import DirtyRoadDataset, CleanRoadDataset
+from data.RoadStatusModelDS_v2 import RoadStatusDataset
 
 if __name__ == "__main__" : 
     ###### Parameters ######
@@ -29,26 +30,22 @@ if __name__ == "__main__" :
     ########## 총 45851개 ###########
     # 데이터 셋 불러오기
     if args.path == 'server':
-        front_path = '/home/ampere_2_1/Seojeonghyun'
+        front_path = '/media/ampere_2_1/Seojeonghyun/T7/2024-Summer-Internship'
     else:
-        front_path = '/home/rideflux'
+        front_path = '/media/rideflux/T7/2024-Summer-Internship'
         
-    dirty_ds = DirtyRoadDataset(front_path + '/2024-Summer-Internship/CameraBlockDL/data/dirty.csv')
-    clean_ds = CleanRoadDataset(front_path + '/2024-Summer-Internship/CameraBlockDL/data/clean.csv')
+    clean_train_ds = RoadStatusDataset(front_path + '/scene/clean_train.csv')
+    clean_val_ds = RoadStatusDataset(front_path + '/scene/clean_val.csv')
+    clean_test_ds = RoadStatusDataset(front_path + '/scene/clean_test.csv')
 
-    # 두 데이터 셋 비율 설정
-    dirty_ds_sz, clean_ds_sz= len(dirty_ds), len(clean_ds)
-
-    clean_train_sz, clean_val_sz = int(clean_ds_sz * clean_train_ratio), int(clean_ds_sz * clean_val_ratio)
-    clean_test_sz = clean_ds_sz - clean_train_sz - clean_val_sz
-
-    dirty_train_sz = int(dirty_ds_sz * dirty_train_ratio)
-    dirty_val_sz = dirty_ds_sz - dirty_train_sz
-
-    clean_train_ds, clean_val_ds, clean_test_ds = random_split(clean_ds, [clean_train_sz, clean_val_sz, clean_test_sz])
-    dirty_train_ds, dirty_val_ds = random_split(dirty_ds, [dirty_train_sz, dirty_val_sz])
-    dirty_test_ds = dirty_val_ds
+    dirty_train_ds = RoadStatusDataset(front_path + '/scene/dirty_train.csv')
+    dirty_val_ds = RoadStatusDataset(front_path + '/scene/dirty_val.csv')
+    dirty_test_ds = RoadStatusDataset(front_path + '/scene/dirty_test.csv')
     
+    print(f'Train / Valid / Test')
+    print(f'{len(clean_train_ds)} / {len(clean_val_ds)} / {len(clean_test_ds)}')
+    print(f'{len(dirty_train_ds)} / {len(dirty_val_ds)} / {len(dirty_test_ds)}')
+
     # Total dataset 만들기 = dirty + clean
     train_ds = dirty_train_ds + clean_train_ds
     val_ds = dirty_val_ds + clean_val_ds
@@ -71,7 +68,7 @@ if __name__ == "__main__" :
             model.train()
             running_loss, corr = 0, 0
             progress_bar = tqdm(train_dl, desc = f'Epoch {epoch +1}/{epochs}')
-            for img, label in progress_bar:
+            for img, label, path in progress_bar:
                 img, label = img.to(device), label.to(device)
                 optimizer.zero_grad()
                 output = model(img)
