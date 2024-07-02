@@ -20,9 +20,11 @@ def drawCAM(img,argmax):
     # output = model(input_img)
     # _, argmax = torch.max(output, 1)
     activation_map = model.featuremap.squeeze().cpu()
+    # print(activation_map.shape)
     params = list(model.parameters())
     weight_softmax = params[-2].cpu()
-    class_weights = weight_softmax[argmax.item()].view(128,5,10)
+    # print(weight_softmax.shape)
+    class_weights = weight_softmax[argmax.item()].view(128, 22, 40)
     cam = torch.zeros(activation_map.shape[1:], dtype=torch.float32)
     for i in range(len(class_weights)):
         cam += class_weights[i,:,:]*activation_map[i,:,:]
@@ -65,14 +67,14 @@ test_ds = dirty_test_ds + clean_test_ds
 test_dl = DataLoader(dataset = test_ds, batch_size = test_batch_sz, shuffle= True, drop_last = False)
 
 classes = ['clean', 'dirty']
-model = torch.load('resultmodel.pt')
+model = torch.load('/home/rideflux/2024-Summer-Internship/CameraBlockDL/test/1719907458.2549872_model.pt')
 model.eval()
 cols, rows = 8, 4
-img_list = os.listdir('/home/ampere_2_1/Seojeonghyun/2024-Summer-Internship/CameraBlockDL/test/image')
+img_list = os.listdir('/home/rideflux/2024-Summer-Internship/CameraBlockDL/test/image')
 img_cnt = len(img_list)
 
 for i in range(1, cols*rows + 1):
-    img_list = os.listdir('/home/ampere_2_1/Seojeonghyun/2024-Summer-Internship/CameraBlockDL/test/image')
+    img_list = os.listdir('/home/rideflux/2024-Summer-Internship/CameraBlockDL/test/image')
     img_cnt = len(img_list)
     data_index = np.random.randint(len(test_ds))
     img = test_ds[data_index][0]
@@ -93,4 +95,4 @@ for i in range(1, cols*rows + 1):
     plt.imshow(plot_img)
     plt.imshow(cam_resized, cmap = 'jet', alpha = 0.5)
     # plt.axis('off')
-    plt.savefig(f'/home/ampere_2_1/Seojeonghyun/2024-Summer-Internship/CameraBlockDL/test/image/{img_cnt}.jpg', format = 'jpeg')
+    plt.savefig(f'/home/rideflux/2024-Summer-Internship/CameraBlockDL/test/image/{img_cnt}.jpg', format = 'jpeg')
