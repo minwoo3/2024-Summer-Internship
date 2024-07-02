@@ -2,6 +2,7 @@ import time
 import argparse
 import torch
 import sys, os
+import getpass
 import numpy as np
 from tqdm import tqdm
 import torch.nn as nn
@@ -19,21 +20,11 @@ if __name__ == "__main__" :
     train_batch_sz, val_batch_sz, test_batch_sz = 32, 2, 2
     epochs, learning_rate = 10, 1e-5
 
-    ###### Arguments ######
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-train', '--train', dest='train', action = 'store_true')
-    parser.add_argument('-val', '--validation', dest='validation', action = 'store_true')
-    parser.add_argument('-test', '--test', dest='test', action = 'store_true')
-    parser.add_argument('-path', '--path', dest='path', action = 'store')
-    args = parser.parse_args()
-
     ########## 총 45851개 ###########
     # 데이터 셋 불러오기
-    if args.path == 'server':
-        front_path = '/media/ampere_2_1/T7/2024-Summer-Internship'
-    else:
-        front_path = '/media/rideflux/T7/2024-Summer-Internship'
-        
+    
+    front_path = f'/media/{getpass.getuser()}/T7/2024-Summer-Internship'
+       
     clean_train_ds = RoadStatusDataset(front_path + '/scene/clean_train.csv')
     clean_val_ds = RoadStatusDataset(front_path + '/scene/clean_val.csv')
     clean_test_ds = RoadStatusDataset(front_path + '/scene/clean_test.csv')
@@ -58,30 +49,31 @@ if __name__ == "__main__" :
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = CNNModel()
+    # model = nn.DataParallel(model, device_ids= [0,1])
+    # model.to(f'cuda:{model.device_ids[0]}')
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
     loss_fn = nn.CrossEntropyLoss()
     start_time = time.time()
     running_loss_log = []
-    if args.train:
-        for epoch in range(epochs):
-            model.train()
-            running_loss, corr = 0, 0
-            progress_bar = tqdm(train_dl, desc = f'Epoch {epoch +1}/{epochs}')
-            for img, label, path in progress_bar:
-                img, label = img.to(device), label.to(device)
-                optimizer.zero_grad()
-                output = model(img)
-                loss = loss_fn(output, label.long())
-                loss.backward()
-                optimizer.step()
-                _ , pred = output.max(dim=1)
-                corr += pred.eq(label).sum().item()
-                running_loss += loss.item()*img.size(0)
-                running_loss_log.append(running_loss)
-            acc = corr/len(train_dl.dataset)
-            print(f'Epoch {epoch+1}/{epochs}, Training Accuracy: {acc:.4f}, loss: {running_loss / len(train_dl.dataset):.4f}')
-        end_time = time.time()
-        duration = end_time - start_time
-        result_save_dir = front_path + '/CameraBlockDL/train'
-        torch.save(model, result_save_dir + f'{time.time()}_model.pt')
+    for epoch in range(epochs):
+        model.train()
+        running_loss, corr = 0, 0
+        progress_bar = tqdm(train_dl, desc = f'Epoch {epoch +1}/{epochs}')
+        for img, label, path in progress_bar:
+            # img, label = img.to(f'cuda:{model.device_ids[0]}'), label.to(f'cuda:{model.device_ids[0]}')
+            img, label = img.to(device), label.to(device)
+            optimizer.zero_grad()
+            output = model(img)
+            loss = loss_fn(output, label.long())
+            loss.backward()
+            optimizer.step()
+            _ , pred = output.max(dim=1)
+            corr += pred.eq(label).sum().item()
+            running_loss += loss.item()*img.size(0)
+            running_loss_log.append(running_loss)
+        acc = corr/len(train_dl.dataset)
+        print(f'Epoch {epoch+1}/{epochs}, Training Accuracy: {acc:.4f}, loss: {running_loss / len(train_dl.dataset):.4f}')
+    end_time = time.time()
+    duration = end_time - start_time
+    torch.save(model, f'{front_path}/{time.time()}_model.pt')

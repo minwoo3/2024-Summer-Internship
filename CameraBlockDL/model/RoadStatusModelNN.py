@@ -22,14 +22,21 @@ class CNNModel(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.fc = nn.Linear(6400, 2)
+        self.fc = nn.Linear(112640, 2)
+        # self.fc = nn.Linear(6400,2)
     
     def forward(self, x):
         x = self.sequential(x)
+        # print(x.shape)
         self.featuremap = x
         x = torch.flatten(x, 1)
+        # print(x.shape)
         x = self.fc(x)
+        # print(x.shape)
         return x
+
+
+    
 ############ ResNet50 ###############
 def conv_block(in_dim, out_dim, kernel_size, activation, stride=1):
     model = nn.Sequential(

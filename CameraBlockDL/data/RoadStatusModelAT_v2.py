@@ -1,12 +1,10 @@
 import os
-import random
-import cv2
 import numpy as np
-import torch
 import argparse
-import pickle
 import csv
 from tqdm import tqdm
+import getpass
+
 def csvwriter(csv_dir, target_list):
         with open(csv_dir, 'w', newline="") as file:
             writer = csv.writer(file)
@@ -15,7 +13,6 @@ def csvwriter(csv_dir, target_list):
 def image_list_append(dataset_path, scene_list):
     img_list = []
     for scene in tqdm(scene_list):
-        # print(scene)
         if 'NIA' in dataset_path:
             scene_abs_path = f'{dataset_path}/{scene}/image0/'
             try:
@@ -24,7 +21,6 @@ def image_list_append(dataset_path, scene_list):
                 for img in scene_img_list:
                     if '@' not in img and cnt % 10 == 0:
                         img_path = scene_abs_path + img
-                        # print(img_path)
                         img_list.append(img_path)
                     cnt += 1
             except FileNotFoundError:
@@ -52,19 +48,14 @@ def main(nia_img_dir, cbtree_img_dir ,clean_csv_save_dir, dirty_csv_save_dir):
     #     with open(dirty_csv_save_dir,"w") as file:
     #         file.write("")
 
-    clean, dirty = [], []
     nia_scenes, cbtree_scenes = [], []
     nia_train_scenes, nia_val_scenes, nia_test_scenes = [], [], []
     cbtree_train_scenes, cbtree_val_scenes, cbtree_test_scenes = [], [], []
     nia_train_ratio, nia_val_ratio, nia_test_ratio = 0.7, 0.15, 0.15
     cbtree_train_ratio, cbtree_val_ratio, cbtree_test_ratio = 0.5, 0.5, 0.5
     ### NIA2021 이미지 리스트
-    # scenes = os.listdir(nia_img_dir)
-    # nia_scenes = []
-    # for scene in scenes:
-    #     nia_scenes.append([scene])
     nia_scenes = os.listdir(nia_img_dir)
-    # ratio 기준 scene 단위 split
+    
 
     ### 벚꽃 이미지 리스트 
     days = os.listdir(cbtree_img_dir)
@@ -109,11 +100,12 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     # -c : clear 모드
     parser.add_argument('-c', '--clear', dest='clear', action = 'store_true')
-    # parser.add_argument('-s', '--sample', dest='sample', action = 'store')
     args = parser.parse_args()
-    # sampling_rate = int(args.sample)
-    nia_img_dir = '/media/rideflux/T7/2024-Summer-Internship/NIA2021'
-    cbtree_img_dir = '/media/rideflux/T7/2024-Summer-Internship/벚꽃'
-    clean_csv_save_dir = '/media/rideflux/T7/2024-Summer-Internship/scene/clean'
-    dirty_csv_save_dir = '/media/rideflux/T7/2024-Summer-Internship/scene/dirty'
+
+    username = getpass.getuser()
+
+    nia_img_dir = f'/media/{username}/T7/2024-Summer-Internship/NIA2021'
+    cbtree_img_dir = f'/media/{username}/T7/2024-Summer-Internship/벚꽃'
+    clean_csv_save_dir = f'/media/{username}/T7/2024-Summer-Internship/scene/clean'
+    dirty_csv_save_dir = f'/media/{username}/T7/2024-Summer-Internship/scene/dirty'
     main(nia_img_dir, cbtree_img_dir, clean_csv_save_dir, dirty_csv_save_dir)
