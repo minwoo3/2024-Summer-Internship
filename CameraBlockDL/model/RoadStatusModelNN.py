@@ -22,17 +22,15 @@ class CNNModel(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.fc = nn.Linear(112640, 2)
-        # self.fc = nn.Linear(6400,2)
+        self.fc = None
     
     def forward(self, x):
         x = self.sequential(x)
-        # print(x.shape)
         self.featuremap = x
         x = torch.flatten(x, 1)
-        # print(x.shape)
+        if self.fc is None:
+            self.fc = nn.Linear(x.size(1), 2)
         x = self.fc(x)
-        # print(x.shape)
         return x
 
 

@@ -8,19 +8,14 @@ from tqdm import tqdm
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, TQDMProgressBar, EarlyStopping
 from torch.utils.data import Dataset, DataLoader, random_split
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from pytorch_lightning.loggers import WandbLogger
 from model.RoadStatusModelNN_lightning import ResnetModule
 from data.RoadStatusModelDS_lightning import RoadStadusDataModule
-import wandb
-
-wandb.init()
 
 module = ResnetModule(opt=1e-5)
-datamodule = RoadStadusDataModule(batch_size=32)
+datamodule = RoadStadusDataModule(batch_size=8)
 
 checkpoint_callback = ModelCheckpoint(
     monitor='val/loss',
@@ -37,14 +32,14 @@ early_stopping_callback = EarlyStopping(
     mode='min'
 )
 
-wandb_logger = WandbLogger(project = "RoadStatusModel")
+torch.cuda.empty_cache()
 
 trainer = pl.Trainer(
     accelerator="gpu",
     devices=[0],
     max_epochs=100,
-    logger=wandb_logger,
-    callbacks=[checkpoint_callback, early_stopping_callback]
+    callbacks=[checkpoint_callback, early_stopping_callback, TQDMProgressBar()],
+    precision=16
 )
 
 ######## Train & Validation #######
