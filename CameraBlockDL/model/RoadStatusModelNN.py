@@ -22,15 +22,15 @@ class CNNModel(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.fc = None
-    
+        # model을 device 변경한다고 선언 시, init 부만 device로 넘겨줌
+        self.fc = nn.Linear(112640, 2)
+        
     def forward(self, x):
         x = self.sequential(x)
         self.featuremap = x
         x = torch.flatten(x, 1)
-        if self.fc is None:
-            self.fc = nn.Linear(x.size(1), 2)
         x = self.fc(x)
+        
         return x
 
 

@@ -1,7 +1,5 @@
 import cv2
 import os
-
-
 import argparse
 import re
 
@@ -13,7 +11,7 @@ def sorted_alphanumeric(data):
 class Viewer():
     def __init__(self, root_path):
         self.root_path = root_path # 05-08까지
-        self.dirs = sorted_alphanumeric(os.listdir(root_path))[10:19]
+        self.dirs = sorted_alphanumeric(os.listdir(root_path))[120:130]
         self.curr_i = 0
         self.set_curr_dirs()
 

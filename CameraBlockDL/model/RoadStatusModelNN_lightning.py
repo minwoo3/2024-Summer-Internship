@@ -66,6 +66,7 @@ class CNNModule(pl.LightningModule):
         
     def training_step(self, batch, batch_idx):
         im, label, path = batch 
+        im, label = im.to(self.device), label.to(self.device)
         pred = self.model(im)
         train_loss = F.cross_entropy(pred, label)
         self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True)
@@ -73,6 +74,7 @@ class CNNModule(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         im, label, path = batch
+        im, label = im.to(self.device), label.to(self.device)
         with torch.no_grad():
             pred = self.model(im)
             val_loss = F.cross_entropy(pred, label)
@@ -80,13 +82,51 @@ class CNNModule(pl.LightningModule):
         return val_loss
     
     def test_step(self, batch, batch_idx):
-        im, label, path = batch
+        ims, labels, paths = batch
+        ims, labels = ims.to(self.device), labels.to(self.device)
         with torch.no_grad():
-            pred = self.model(im)
-            test_loss = F.cross_entropy(pred, label)
-        self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True)
-        return test_loss
+            output = self.model(ims)
+            _, preds = torch.max(output, 1)
+            tp, tn, fp, fn = 0, 0, 0, 0
+            false_batch = []
+            for i in range(len(labels)):
+                pred = preds[i].item()
+                label = labels[i].item()
+                path = paths[i]
+
+                if label == 0:
+                    if pred == 0:
+                        tp += 1
+                    else:
+                        fn += 1
+                        false_batch.append(path)
+                else:
+                    if pred == 1:
+                        tn += 1
+                    else:
+                        fp += 1
+                        false_batch.append(path)
+        return {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn, 'false_batch': false_batch}
     
+    def test_epoch_end(self, outputs):
+        tp = sum([x['tp'] for x in outputs])
+        tn = sum([x['tn'] for x in outputs])
+        fp = sum([x['fp'] for x in outputs])
+        fn = sum([x['fn'] for x in outputs])
+        false_batch = [x for output in outputs for x in output['false_batch']]
+
+        accuracy = (tp + tn) / (tp + tn + fp + fn)
+        recall = tp / (tp + fn)
+        specificity = tn / (fp + tn)
+        precision = tp / (tp + fp)
+        f1 = 2 * precision * recall / (precision + recall)
+        
+        print(f'Test Finished\nTrue Positive: {tp}, True Negative: {tn}, False Positive: {fp}, False Negative: {fn}')
+        print(f'Accuracy: {accuracy*100}%, Recall: {recall*100}%, Specificity: {specificity*100}%, Precision: {precision*100}%, F1: {f1}')
+        
+        csvwriter('result.csv', false_batch)
+        txtwriter('result.txt', false_batch)
+
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt)
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, verbose=True)

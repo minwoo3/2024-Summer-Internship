@@ -39,7 +39,7 @@ def image_list_append(dataset_path, scene_list):
 
     return img_list
 
-def main(nia_img_dir, cbtree_img_dir ,clean_csv_save_dir, dirty_csv_save_dir):
+def annotate(nia_img_dir, cbtree_img_dir ,clean_csv_save_dir, dirty_csv_save_dir):
     global args
     # clear
     # if args.clear:
@@ -108,4 +108,5 @@ if __name__=='__main__':
     cbtree_img_dir = f'/media/{username}/T7/2024-Summer-Internship/벚꽃'
     clean_csv_save_dir = f'/media/{username}/T7/2024-Summer-Internship/scene/clean'
     dirty_csv_save_dir = f'/media/{username}/T7/2024-Summer-Internship/scene/dirty'
-    main(nia_img_dir, cbtree_img_dir, clean_csv_save_dir, dirty_csv_save_dir)
+    annotate(nia_img_dir, cbtree_img_dir, clean_csv_save_dir, dirty_csv_save_dir)
+
