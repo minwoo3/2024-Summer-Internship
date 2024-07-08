@@ -10,7 +10,7 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from model.RoadStatusModelNN import CNNModel
-
+from test.writer import csvwriter, txtwriter
 class ResnetModule(pl.LightningModule):
 	def __init__(self, opt):
 		super(ResnetModule, self).__init__()
@@ -106,26 +106,21 @@ class CNNModule(pl.LightningModule):
                     else:
                         fp += 1
                         false_batch.append(path)
+
+                accuracy = (tp + tn) / (tp + tn + fp + fn)
+                recall = tp / (tp + fn)
+                specificity = tn / (fp + tn)
+                precision = tp / (tp + fp)
+                f1 = 2 * precision * recall / (precision + recall)
+                print(f'Test Finished\nTrue Positive: {tp}, True Negative: {tn}, False Positive: {fp}, False Negative: {fn}')
+                print(f'Accuracy: {accuracy*100}%, Recall: {recall*100}%, Specificity: {specificity*100}%, Precision: {precision*100}%, F1: {f1}')
+
+            # csvwriter('result.csv', false_batch)
+            txtwriter('result.txt', false_batch)
         return {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn, 'false_batch': false_batch}
     
     def test_epoch_end(self, outputs):
-        tp = sum([x['tp'] for x in outputs])
-        tn = sum([x['tn'] for x in outputs])
-        fp = sum([x['fp'] for x in outputs])
-        fn = sum([x['fn'] for x in outputs])
-        false_batch = [x for output in outputs for x in output['false_batch']]
-
-        accuracy = (tp + tn) / (tp + tn + fp + fn)
-        recall = tp / (tp + fn)
-        specificity = tn / (fp + tn)
-        precision = tp / (tp + fp)
-        f1 = 2 * precision * recall / (precision + recall)
-        
-        print(f'Test Finished\nTrue Positive: {tp}, True Negative: {tn}, False Positive: {fp}, False Negative: {fn}')
-        print(f'Accuracy: {accuracy*100}%, Recall: {recall*100}%, Specificity: {specificity*100}%, Precision: {precision*100}%, F1: {f1}')
-        
-        csvwriter('result.csv', false_batch)
-        txtwriter('result.txt', false_batch)
+        pass
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt)
