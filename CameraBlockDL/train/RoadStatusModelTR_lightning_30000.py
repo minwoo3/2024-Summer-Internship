@@ -4,29 +4,18 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, TQDMProgressBar, EarlyStopping
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from model.RoadStatusModelNN_lightning import ResnetModule, CNNModule
-from data.RoadStatusModelDS_lightning import RoadStadusDataModule
+from CameraBlockDL.data.RoadStatusModelDM_lightning_30000 import RoadStadusDataModule
 
 # module = ResnetModule(opt=1e-5)
 opt=1e-5
-module = CNNModule(opt)
+module = CNNModule(opt,1280,720)
+# module = ResnetModule(opt)
+
+
+module = CNNModule.load_from_checkpoint('CNNModule_epochs_20_lr_1e-05.ckpt', opt)
 module_name = module.__class__.__name__
 batch_size = 16
 datamodule = RoadStadusDataModule(batch_size)
-
-# checkpoint_callback = ModelCheckpoint(
-#     monitor='val/loss',
-#     dirpath='checkpoints/',
-#     filename='best-checkpoint',
-#     save_top_k=1,
-#     mode='min'
-# )
-
-# early_stopping_callback = EarlyStopping(
-#     monitor='val/loss',
-#     patience=5,
-#     verbose=True,
-#     mode='min'
-# )
 
 torch.cuda.empty_cache()
 
@@ -49,7 +38,7 @@ trainer = pl.Trainer(
 ######## Train & Validation #######
 trainer.fit(module, datamodule)
 
-trainer.save_checkpoint(f'{module_name}_epochs_{max_epochs}_lr_{opt}_crop.ckpt')
+trainer.save_checkpoint(f'{module_name}_epochs_{max_epochs}_lr_{opt}_30000.ckpt')
 
 ######## Test #######
 # best_model_path = checkpoint_callback.best_model_path

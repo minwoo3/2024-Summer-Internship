@@ -11,19 +11,19 @@ def sorted_alphanumeric(data):
 class Viewer():
     def __init__(self, root_path):
         self.root_path = root_path # 05-08까지
-        self.dirs = sorted_alphanumeric(os.listdir(root_path))[120:130]
+        self.dirs = sorted_alphanumeric(os.listdir(root_path))[830:840]
         self.curr_i = 0
         self.set_curr_dirs()
 
     def set_curr_dirs(self):
         self.curr_dir = os.path.join(self.root_path, self.dirs[self.curr_i])
         self.img_paths = [os.path.join(self.curr_dir, 'camera_0', x) for x in sorted_alphanumeric(os.listdir(os.path.join(self.curr_dir, 'camera_0')))]
-    
+    	
     def change_curr_dirs(self, dif):
         self.curr_i += dif
         self.curr_i %= len(self.dirs)
         self.set_curr_dirs()
-
+	
     def view(self):
         idx = 0
         while True:
@@ -34,7 +34,7 @@ class Viewer():
 
             pressed = cv2.waitKeyEx(15)
             if pressed == 27: break
-            elif pressed == 96: self.change_curr_dirs(-1); idx=0
+            elif pressed == 96: self.change_curr_dirs(-1); idx=0	
             elif pressed==9: self.change_curr_dirs(1); idx=0
 
             idx += 1

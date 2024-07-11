@@ -1,8 +1,9 @@
 import torch.nn as nn
 import torch
+import math
 
 class CNNModel(nn.Module):
-    def __init__(self):
+    def __init__(self, img_width, img_height):
         super(CNNModel, self).__init__()
         self.featuremap = None
         self.sequential = nn.Sequential(
@@ -23,7 +24,7 @@ class CNNModel(nn.Module):
             nn.MaxPool2d(2, 2)
         )
         # model을 device 변경한다고 선언 시, init 부만 device로 넘겨줌
-        self.fc = nn.Linear(112640, 2)
+        self.fc = nn.Linear(128*math.floor(img_width/32)*math.floor(img_height/32), 2)
         
     def forward(self, x):
         x = self.sequential(x)

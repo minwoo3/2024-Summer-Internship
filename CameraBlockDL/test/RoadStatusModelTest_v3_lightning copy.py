@@ -15,10 +15,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 # 기존 모듈 임포트
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.RoadStatusModelNN_lightning import CNNModule
+from model.RoadStatusModelNN_lightning import CNNModule, ResnetModule
 from data.RoadStatusModelDS_lightning import RoadStadusDataModule
 from data.RoadStatusModelAT_v2 import annotate
-from test.writer import csvwriter, txtwriter
 
 username = getpass.getuser()
 
@@ -34,10 +33,11 @@ if args.update == True:
     annotate(nia_img_dir, cbtree_img_dir, clean_csv_save_dir, dirty_csv_save_dir)
 
 # 모델 로드
-model = CNNModule.load_from_checkpoint('path_to_your_checkpoint.ckpt')
+# model = CNNModule.load_from_checkpoint('ResnetModule_epochs_20_lr_1e-05.ckpt', opt = 1e-5)
+model = ResnetModule.load_from_checkpoint('ResnetModule_epochs_20_lr_1e-05.ckpt', opt = 1e-5, strict = False)
 batch_size = 16
 datamodule = RoadStadusDataModule(batch_size)
 
 # 테스트 실행
 trainer = Trainer(gpus=1)
-trainer.test(model, test_dataloaders=datamodule)
+trainer.test(model, dataloaders=datamodule)
