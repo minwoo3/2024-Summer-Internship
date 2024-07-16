@@ -14,7 +14,7 @@ from torch.utils.data import Dataset, DataLoader, random_split
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data.RoadStatusModelAT_v2 import annotate
 from RoadStatusModel.data.RoadStatusModelDM_lightning import RoadStadusDataModule
-from model.RoadStatusModelNN_lightning import CNNModule, ResnetModule
+from RoadStatusModel.model.module_v3 import CNNModule, ResnetModule
 
 def csvwriter(csv_dir, target_list):
     with open(csv_dir, 'w', newline="") as file:

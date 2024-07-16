@@ -24,9 +24,17 @@ class CNNModel(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        # model을 device 변경한다고 선언 시, init 부만 device로 넘겨줌
-        self.fc = nn.Linear(128*math.floor(img_width/32)*math.floor(img_height/32), 2)
         
+        self.fc_input_dim = self._get_fc_input_dim(img_width,img_height)
+        self.fc = nn.Linear(self.fc_input_dim, 2)
+    
+    def _get_fc_input_dim(self, img_width, img_height):
+        # 배치 크기 1을 가지는 임의의 입력 테서를 만들어서
+        # fc 레이어에 들어가는 크기 확인
+        x = torch.randn(1,3,img_width,img_height)
+        x = self.sequential(x)
+        return x.numel()
+
     def forward(self, x):
         x = self.sequential(x)
         self.featuremap = x
@@ -37,7 +45,6 @@ class CNNModel(nn.Module):
         return x
 
 
-    
 ############ ResNet50 ###############
 def conv_block(in_dim, out_dim, kernel_size, activation, stride=1):
     model = nn.Sequential(

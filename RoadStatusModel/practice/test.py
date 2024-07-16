@@ -1,40 +1,31 @@
-import csv
-import os
+import sys, os
+import argparse
+import getpass
+import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
+import torch.nn.functional as F
+from torchvision import transforms
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from model.module_v3 import CNNModule, ResnetModule
+from data.datamodule_v3 import RoadStadusDataModule
 
-# def csvwriter(csv_dir, target_list):
-#     with open(csv_dir, 'w', newline="") as file:
-#         writer = csv.writer(file)
-#         writer.writerows(target_list)
+parser = argparse.ArgumentParser()
+parser.add_argument('-m', '--model', dest='model', action = 'store')
+args = parser.parse_args()
+opt, batch_size = 1e-5, 16
+datamodule = RoadStadusDataModule(batch_size)
 
-# with open('30000.csv','r',newline='') as f:
-#     data = list(csv.reader(f))
-# for i in range(len(data)):
-#     data[i] = ''.join(data[i])
-    # total = []
-    # for row in data:
-    #     total.append([row[0],row[8]])
+datamodule.setup(stage='fit')
 
-# csvwriter('30000_copy.csv',total)
-with open('30000_copy.csv','r',newline='') as f:
-    data = list(csv.reader(f))
-# print(data[0][1])
+example_img, _, _ = datamodule.train_dataset[0]
+transformed_img_size = example_img.shape[-2:]
 
-path = os.listdir('/home/rideflux/Public/TrainingData/GeneralCase/Raw/30000/camera_0')
-print(path)
-
-
-# image_list = []
-# dataset_dir = '/media/rideflux/T7/2024-Summer-Internship/NIA2021/10002'
-# for i in range(len(data)):
-#     scene_abs_path = f'{dataset_dir}/image0'
-#     scene_image_list = os.listdir(scene_abs_path)
-#     for image in scene_image_list:
-#         if '@' not in image:
-#             image_list.append(image)
-
-# print(image_list.shape)
-# list1 = [1 for _ in range(len(image_list))]
-# print(list1)
-# # for rows in data:
-# #     print(''.join(rows))
-# # # print(data)
+if args.model in ['cnn','CNN']:
+    module = CNNModule(img_width=transformed_img_size[1], img_height=transformed_img_size[0], opt=opt)
+elif args.model in ['resnet','res','ResNet']:
+    module = ResnetModule(opt)
+else:
+    raise ValueError("Invalid model name. Choose from ['cnn', 'CNN', 'resnet', 'res', 'ResNet']")
+    
+module_name = module.__class__.__name__

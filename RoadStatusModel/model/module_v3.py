@@ -16,13 +16,15 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torchvision.models import resnet18, resnet34, resnet50
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from RoadStatusModel.model.model_v3 import CNNModel
+from model.model_v3 import CNNModel
 
 def csvwriter(csv_dir, target_list):
     with open(csv_dir, 'w', newline="") as file:
         writer = csv.writer(file)
         writer.writerows(target_list)
-    print(f'List Saved at {csv_dir} Succesfully')
+        # for item in target_list:
+        #     writer.writerow(item)
+    print(f'List Saved at {csv_dir} Successfully')
 
 def txtwriter(txt_dir, target_list):
     with open(txt_dir, 'w', newline="") as file:
@@ -118,7 +120,7 @@ class CNNModule(pl.LightningModule):
         super(CNNModule, self).__init__()
         self.opt = opt
         self.model = CNNModel(img_width, img_height)
-        # self.featuremap = self.model.featuremap
+        self.confusion_matrix = torchmetrics.ConfusionMatrix(task = 'binary', num_classes=2)
 
     def forward(self, x):
         return self.model(x)
@@ -141,51 +143,29 @@ class CNNModule(pl.LightningModule):
         return val_loss
     
     def test_step(self, batch, batch_idx):
-        ims, labels, paths = batch
-        ims, labels = ims.to(self.device), labels.to(self.device)
-        with torch.no_grad():
-            output = self.model(ims)
-            _, preds = torch.max(output, 1)
-            tp, tn, fp, fn = 0, 0, 0, 0
-            false_batch = []
-            for i in range(len(labels)):
-                pred = preds[i].item()
-                label = labels[i].item()
-                path = paths[i]
+        self.model.eval()
+        imgs, labels, paths = batch
+        preds = self.model(imgs)
+        test_loss = F.cross_entropy(preds, labels)
+        self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True)
+        pred_class = torch.argmax(preds, dim=1)
+        self.confusion_matrix(pred_class, labels)
+        false_batch = []
+        for i in range(len(labels)):
+            pred = pred_class[i].item()
+            label = labels[i].item()
+            path = paths[i]
+            if (label == 0 and pred == 1) or (label == 1 and pred == 0):
+                false_batch.append([path,label])
 
-                if label == 0:
-                    if pred == 0:
-                        tp += 1
-                    else:
-                        fn += 1
-                        false_batch.append(path)
-                else:
-                    if pred == 1:
-                        tn += 1
-                    else:
-                        fp += 1
-                        false_batch.append(path)
-
-        return {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn, 'false_batch': false_batch}
+        return false_batch
     
     def test_epoch_end(self, outputs):
-        tp = sum([output['tp'] for output in outputs])
-        tn = sum([output['tn'] for output in outputs])
-        fp = sum([output['fp'] for output in outputs])
-        fn = sum([output['fn'] for output in outputs])
-        false_batch = [path for output in outputs for path in output['false_batch']]
-
-        
-        accuracy = (tp + tn) / (tp + tn + fp + fn)
-        recall = tp / (tp + fn)
-        specificity = tn / (fp + tn)
-        precision = tp / (tp + fp)
-        f1 = 2 * precision * recall / (precision + recall)
-        
-        print(f'Test Finished\nTrue Positive: {tp}, True Negative: {tn}, False Positive: {fp}, False Negative: {fn}')
-        print(f'Accuracy: {accuracy*100}%, Recall: {recall*100}%, Specificity: {specificity*100}%, Precision: {precision*100}%, F1: {f1}')
-        
-        txtwriter('result.txt', false_batch)
+        cm = self.confusion_matrix.compute().cpu()
+        print("Confusion Matrix:\n", cm.numpy())
+        self.confusion_matrix.reset()
+        false_batch = [path for batch in outputs for path in batch]
+        csvwriter('result.csv', false_batch)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt)
@@ -197,7 +177,6 @@ class CNNModule(pl.LightningModule):
                 'monitor': 'val/loss'
             }
         }
-
     @property
     def featuremap(self):
         return self.model.featuremap

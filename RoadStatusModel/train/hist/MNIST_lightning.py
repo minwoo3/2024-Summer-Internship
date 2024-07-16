@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.RoadStatusModelNN_lightning import MainModule
+from RoadStatusModel.model.module_v3 import MainModule
 
 # data
 transform = transforms.Compose([

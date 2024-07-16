@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.RoadStatusModelNN_lightning import CNNModule, ResnetModule
+from RoadStatusModel.model.module_v3 import CNNModule, ResnetModule
 
 def drawCAM(argmax, width, height):
     global model

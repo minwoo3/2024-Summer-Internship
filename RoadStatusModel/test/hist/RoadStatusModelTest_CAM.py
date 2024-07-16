@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 from PIL import Image
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.RoadStatusModelNN import CNNModel
+from RoadStatusModel.model.model_v3 import CNNModel
 
 # 모델 준비
 model = torch.load('resultmodel.pt')

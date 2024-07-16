@@ -5,11 +5,6 @@ import re
 import numpy as np
 import csv
 import time
-def sorted_alphanumeric(data):
-    # 문자열이 숫자일 경우, 정수로 변환
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
-    return sorted(data, key=alphanum_key)
 
 def csvwriter(csv_dir, target_list):
     with open(csv_dir, 'w', newline="") as file:
@@ -32,10 +27,7 @@ def ptf(pts,img):
     transform_mat = cv2.getPerspectiveTransform(pts1,pts2)
 
     result = cv2.warpPerspective(img, transform_mat, (width, height))
-    return result
-
-
-
+    return result, transform_mat
 
 class Viewer():
     def __init__(self, csv_path, index):
@@ -57,7 +49,7 @@ class Viewer():
             self.curr_i -= dif
 	
     def close(self, index):
-        result = []
+        result = []                                                                     
         for i in range(len(self.img_path)):
             result.append([self.img_path[i],self.img_label[i]])
         csvwriter(self.csv_path,result)
@@ -70,8 +62,10 @@ class Viewer():
             img = cv2.imread(curr_img_path)
 
             img = cv2.resize(img,(1280, 720))
-            pts1 = [[330,500],[950,500],[100,650],[1200,650]]
-            ptf_img = ptf(pts1,img)
+            pts1 = [[350,400],[930,400],[5,600],[1275,600]]
+            ptf_img, transform_mat = ptf(pts1,img)
+            inverse_mat = np.linalg.inv(transform_mat)
+            original_image = cv2.warpPerspective(ptf_img, inverse_mat, (1280,720))
             # print(ptf_img.shape)
             # img = cv2.Canny(ptf_img,50,150)
 
@@ -80,6 +74,7 @@ class Viewer():
                 cv2.circle(img, (x, y), 10, (0, 255, 0), -1)
             cv2.imshow('viewer', img)
             cv2.imshow('ptf',ptf_img)
+            cv2.imshow('inverse',original_image)
 
 
             pressed = cv2.waitKeyEx(15)
@@ -89,8 +84,6 @@ class Viewer():
             elif pressed == 48: self.img_label[self.curr_i] = 0; self.change_curr_dirs(1)
             elif pressed == 49: self.img_label[self.curr_i] = 1; self.change_curr_dirs(1)
             
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--path', '-p', dest='path', required=True)
 parser.add_argument('--index', '-i', dest='index',type = int, default = 0)
