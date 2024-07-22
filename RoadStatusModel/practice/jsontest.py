@@ -74,44 +74,44 @@ fshift_i = np.fft.ifftshift(fshift)
 inv_fft = np.fft.ifft2(fshift_i).real
 inv_fft = inv_fft.astype(np.float32)/np.max(inv_fft)
 _, inv_fft = cv2.threshold(inv_fft, 0.3, 1.0, cv2.THRESH_BINARY)
-# inv_fft[inv_fft<=0] = 0
-# inv_fft[inv_fft > 0 ] = 255
+inv_fft[inv_fft<=0] = 0
+inv_fft[inv_fft > 0 ] = 255
 # print(np.max(inv_fft))
 # print(np.min(inv_fft))
-img = cv2.resize(img,(1280,720))
+# img = cv2.resize(img,(1280,720))
 
 
-img2 = np.fromfile("/home/rideflux/Public/LaneLineCamera/lane_label_image0/10007/10007_152.bin", dtype = bool).reshape(930, 1440)
-uy, ux = img2.nonzero()
+# img2 = np.fromfile("/home/rideflux/Public/LaneLineCamera/lane_label_image0/10007/10007_152.bin", dtype = bool).reshape(930, 1440)
+# uy, ux = img2.nonzero()
 
-ux = ux / 1440 * 1280
-uy = uy / 930 * 720
+# ux = ux / 1440 * 1280
+# uy = uy / 930 * 720
 
-ux, uy = np.clip(ux.astype(int), 0, 1280 - 1), np.clip(uy.astype(int), 0, 720 - 1)
+# ux, uy = np.clip(ux.astype(int), 0, 1280 - 1), np.clip(uy.astype(int), 0, 720 - 1)
 
-img[uy, ux, 0] = 255
-img[uy, ux, 1] = 0
-img[uy, ux, 2] = 0
+# img[uy, ux, 0] = 255
+# img[uy, ux, 1] = 0
+# img[uy, ux, 2] = 0
 
-cv2.imshow('a',img)
+# cv2.imshow('a',img)
 
-# plt.subplot(221)
-# plt.imshow(ptf_img, cmap='gray')
+plt.subplot(221)
+plt.imshow(ptf_img, cmap='gray')
 
-# plt.subplot(222)
-# plt.imshow(mag_spectrum, cmap='gray')
+plt.subplot(222)
+plt.imshow(mag_spectrum, cmap='gray')
 
-# plt.subplot(223)
-# plt.imshow(mag_spectrum_2, cmap='gray')
+plt.subplot(223)
+plt.imshow(mag_spectrum_2, cmap='gray')
 
 
-# plt.subplot(224)
-# plt.imshow(inv_fft, cmap='gray')
-# plt.show()
+plt.subplot(224)
+plt.imshow(inv_fft, cmap='gray')
+plt.show()
 
 
 # cv2.imshow('crop',ptf_img)
 # # cv2.imshow('fft', inv_fft)
 
-cv2.waitKey(0)
-cv2.destroyWindow('img')
+# cv2.waitKey(0)
+# cv2.destroyWindow('img')

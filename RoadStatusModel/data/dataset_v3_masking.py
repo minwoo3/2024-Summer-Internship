@@ -7,17 +7,19 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 
 class RoadStatusDataset(Dataset):
-    def __init__(self, annotation_file, transform_flag = ''):
+    def __init__(self, annotation_dir,transform_flag = ''):
 
-        with open(annotation_file,'r',newline='') as f:
+        with open(annotation_dir,'r',newline='') as f:
             data = list(csv.reader(f))
+        self.username = getpass.getuser()
+        self.ssd_dir = f'/media/{self.username}/T7/2024-Summer-Internship/NIA2021/'
         self.img_path, self.img_label = [], []
+        self.bin_dir = f'/home/{self.username}/Public/LaneLineCamera/lane_label_image0'
         # 30000,dirty
         for path, label in data:
             self.img_path.append(path)
             self.img_label.append(int(label))
-        self.username = getpass.getuser()
-        self.ssd_dir = f'/media/{self.username}/T7/2024-Summer-Internship'
+
         self.transform_flag = transform_flag
         
         if self.transform_flag == 'ptf':
@@ -57,11 +59,27 @@ class RoadStatusDataset(Dataset):
     
     def __getitem__(self, idx):
         img = pil.open(self.ssd_dir+self.img_path[idx])
+        scene_num, _, img_num = self.img_path[idx].split('/')
+              
         if self.transform_flag == 'ptf':
             img = self.perspectiveTF(img)
         x = self.transform(img)
+
+        bin = np.fromfile(f'{self.bin_dir}/{scene_num}/{img_num[:10]}bin', dtype = bool).reshape(930, 1440)
+        uy, ux = bin.nonzero()
+        ux = ux / 1440 * 1280
+        uy = uy / 930 * 720
+        ux, uy = np.clip(ux.astype(int), 0, 1280 - 1), np.clip(uy.astype(int), 0, 720 - 1)
+        
+        width, height = img.size
+        mask = np.zeros((height,width),dtype=np.uint8)
+        mask[uy, ux] = 255
+        kernel_size = 50
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        mask = cv2.dilate(mask, kernel, iterations=1)
+
         y = self.img_label[idx]
-        return x, y, self.img_path[idx]
+        return x, y, self.img_path[idx], mask
     
     def __len__(self):
         return len(self.img_path)

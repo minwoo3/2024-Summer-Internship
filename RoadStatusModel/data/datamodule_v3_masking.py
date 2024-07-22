@@ -7,14 +7,14 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import pytorch_lightning as pl
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from data.dataset_v3 import RoadStatusDataset
+from data.dataset_v3_masking import RoadStatusDataset
 
 class RoadStadusDataModule(pl.LightningDataModule):
-    def __init__(self, ckpt_name, batch_size: int =8, transform_flag: str =''):
+    def __init__(self, batch_size: int =8, transform_flag: str =''):
         super(RoadStadusDataModule, self).__init__()
         self.batch_size = batch_size
         self.username = getpass.getuser()
-        self.front_path = f'/media/{self.username}/T7/2024-Summer-Internship/scene/{ckpt_name}'
+        self.front_path = f'/media/{self.username}/T7/2024-Summer-Internship/scene'
         self.transform_flag = transform_flag
         
     def prepare_data(self):
@@ -22,10 +22,10 @@ class RoadStadusDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            self.train_dataset = RoadStatusDataset(self.front_path+'/train.csv',self.transform_flag)
-            self.valid_dataset = RoadStatusDataset(self.front_path+'/val.csv',self.transform_flag)
+            self.train_dataset = RoadStatusDataset(self.front_path+'/masking_train.csv',self.transform_flag)
+            self.valid_dataset = RoadStatusDataset(self.front_path+'/masking_val.csv',self.transform_flag)
         if stage == 'test' or stage is None:         
-            self.test_dataset = RoadStatusDataset(self.front_path+'/test3.csv',self.transform_flag)
+            self.test_dataset = RoadStatusDataset(self.front_path+'/masking_test.csv',self.transform_flag)
 
 
     # num_worker: 
