@@ -24,13 +24,10 @@ class CNNModel(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        
         self.fc_input_dim = self._get_fc_input_dim(img_width,img_height)
         self.fc = nn.Linear(self.fc_input_dim, 2)
     
     def _get_fc_input_dim(self, img_width, img_height):
-        # 배치 크기 1을 가지는 임의의 입력 테서를 만들어서
-        # fc 레이어에 들어가는 크기 확인
         x = torch.randn(1,3,img_width,img_height)
         x = self.sequential(x)
         return x.numel()
@@ -40,8 +37,6 @@ class CNNModel(nn.Module):
         self.featuremap = x
         x = torch.flatten(x, 1)
         x = self.fc(x)
-        x = F.softmax(x, dim=1)
-
         return x
 
 

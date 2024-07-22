@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torchvision.models import resnet18, resnet34, resnet50
-
+from torchmetrics.classification import BinaryAccuracy
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from model.model_v3 import CNNModel
 
@@ -121,6 +121,7 @@ class CNNModule(pl.LightningModule):
         self.opt = opt
         self.model = CNNModel(img_width, img_height)
         self.confusion_matrix = torchmetrics.ConfusionMatrix(task = 'binary', num_classes=2)
+        self.accuracy = BinaryAccuracy()
 
     def forward(self, x):
         return self.model(x)
@@ -150,6 +151,7 @@ class CNNModule(pl.LightningModule):
         self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True)
         pred_class = torch.argmax(preds, dim=1)
         self.confusion_matrix(pred_class, labels)
+        self.accuracy(pred_class, labels)
         false_batch = []
         for i in range(len(labels)):
             pred = pred_class[i].item()
@@ -162,8 +164,12 @@ class CNNModule(pl.LightningModule):
     
     def test_epoch_end(self, outputs):
         cm = self.confusion_matrix.compute().cpu()
+        accuracy = self.accuracy.compute().cpu()
         print("Confusion Matrix:\n", cm.numpy())
+        print("Test Accuracy:", accuracy.numpy())
         self.confusion_matrix.reset()
+        self.accuracy.reset()
+        
         false_batch = [path for batch in outputs for path in batch]
         csvwriter('result.csv', false_batch)
 

@@ -51,7 +51,7 @@ def annotate(nia_img_dir, cbtree_img_dir, nas_img_dir, nas_dirty_csv_dir, nas_cl
 
     nia_train_scenes, nia_val_scenes, nia_test_scenes = [], [], []
     cbtree_train_scenes, cbtree_val_scenes, cbtree_test_scenes = [], [], []
-    nas_train_scenes,nas_val_scenes,cbtree_test_scenes = [], [], []
+    nas_train_scenes,nas_val_scenes, nas_test_scenes = [], [], []
 
     nia_train_ratio, nia_val_ratio, nia_test_ratio = 0.7, 0.15, 0.15
     cbtree_train_ratio, cbtree_val_ratio, cbtree_test_ratio = 0.5, 0.25, 0.25
@@ -124,8 +124,6 @@ if __name__=='__main__':
     nia_img_dir = f'/media/{username}/T7/2024-Summer-Internship/NIA2021'
     cbtree_img_dir = f'/media/{username}/T7/2024-Summer-Internship/벚꽃'
     nas_img_dir = f'/home/{username}/GeneralCase/Raw'
-    print(nas_img_dir)
-    # nas_img_dir = f'/home/{username}/Public'
     nas_dirty_csv_dir = f'/media/{username}/T7/2024-Summer-Internship/scene/30000_dirty.csv'
     nas_clean_csv_dir = f'/media/{username}/T7/2024-Summer-Internship/scene/30000_clean.csv'
 

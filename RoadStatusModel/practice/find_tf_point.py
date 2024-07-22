@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 
 win_name = "scanning"
-img = cv2.imread("/home/rideflux/Public/GeneralCase/Raw/31110/camera_0/100.jpg")
-img = cv2.fastNlMeansDenoisingColored(img, None, 10, 10)
+img = cv2.imread("8.jpg")
+# img = cv2.fastNlMeansDenoisingColored(img, None, 10, 10)
 rows, cols = img.shape[:2]
 draw = img.copy()
 pts_cnt = 0
@@ -34,6 +34,7 @@ def ptf(pts):
     transform_mat = cv2.getPerspectiveTransform(pts1,pts2)
 
     result = cv2.warpPerspective(draw, transform_mat, (width, height))
+    
     return result
 
 def onMouse(event, x, y, flags, param):
