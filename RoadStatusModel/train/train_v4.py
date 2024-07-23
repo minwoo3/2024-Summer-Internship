@@ -21,7 +21,7 @@ if args.model in ['cnn','CNN']:
     ckpt_dir = f'{ssd_dir}/checkpoint/cnn'
     if args.checkpoint in ['', None]: 
         num_ckpt = len(os.listdir(ckpt_dir))
-        ckpt_name = '{0}_{1:03d}'.format('CNNModule',num_ckpt+1)
+        ckpt_name = '{0}_{1:03d}'.format('CNNModule',num_ckpt)
     else:
         ckpt_name = args.checkpoint
     print(ckpt_name,'will be save at', ckpt_dir+'/'+ckpt_name+'.ckpt')
@@ -36,7 +36,7 @@ elif args.model in ['resnet','res','ResNet']:
     ckpt_dir = f'{ssd_dir}/checkpoint/resnet'
     if args.checkpoint in ['', None]:
         num_ckpt = len(os.listdir(ckpt_dir))
-        ckpt_name = '{0}_{1:03d}'.format('ResnetModule',num_ckpt+1)
+        ckpt_name = '{0}_{1:03d}'.format('ResnetModule',num_ckpt)
     else:
          ckpt_name = args.checkpoint
     print(ckpt_name,'will be save at', ckpt_dir+ckpt_name+'.ckpt')

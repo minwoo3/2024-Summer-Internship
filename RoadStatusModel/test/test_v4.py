@@ -11,10 +11,11 @@ username = getpass.getuser()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--model', dest='model', action = 'store')
+parser.add_argument('-c', '--ckpt', dest='checkpoint', action = 'store')
 parser.add_argument('-t', '--transform', dest='transform', action = 'store')
 args = parser.parse_args()
 opt, batch_size = 1e-5, 16
-datamodule = RoadStadusDataModule(batch_size = batch_size, transform_flag = args.transform)
+datamodule = RoadStadusDataModule(ckpt_name = args.checkpoint, batch_size = batch_size, transform_flag = args.transform)
 
 datamodule.setup(stage='fit')
 
@@ -25,19 +26,19 @@ transformed_img_size = example_img.shape[-2:]  # (height, width)
 
 if args.model in ['cnn','CNN']:
     ssd_dir = f'/media/{username}/T7/2024-Summer-Internship/checkpoint/cnn'
-    module = CNNModule.load_from_checkpoint(f'{ssd_dir}/CNNModule_2024-07-18_epochs_20.ckpt', 
+    module = CNNModule.load_from_checkpoint(f'{ssd_dir}/{args.checkpoint}.ckpt', 
                                             img_width=transformed_img_size[1], 
                                             img_height=transformed_img_size[0], opt=opt)
 elif args.model in ['resnet','res','ResNet']:
     ssd_dir = f'/media/{username}/T7/2024-Summer-Internship/checkpoint/resnet'
-    module = ResnetModule.load_from_checkpoint(f'{ssd_dir}/ResnetModule_000.ckpt',
+    module = ResnetModule.load_from_checkpoint(f'{ssd_dir}/{args.checkpoint}.ckpt',
                                                  opt = 1e-5, strict = False)
 else:
     raise ValueError("Invalid model name. Choose from ['cnn', 'CNN', 'resnet', 'res', 'ResNet']")
     
 module_name = module.__class__.__name__
 
-trainer = Trainer(gpus=1)
+trainer = Trainer(accelerator='gpu', devices=1)
 trainer.test(module, dataloaders=datamodule)
 
 ################ Result ###################

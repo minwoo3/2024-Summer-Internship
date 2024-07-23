@@ -12,12 +12,12 @@ class RoadStatusDataset(Dataset):
         with open(annotation_file,'r',newline='') as f:
             data = list(csv.reader(f))
         self.img_path, self.img_label = [], []
-        # 30000,dirty
         for path, label in data:
             self.img_path.append(path)
             self.img_label.append(int(label))
         self.username = getpass.getuser()
-        self.ssd_dir = f'/media/{self.username}/T7/2024-Summer-Internship'
+        self.t7_dir = f'/media/{self.username}/T7/2024-Summer-Internship'
+        self.sata_dir = f'/media/{self.username}/sata-ssd'
         self.transform_flag = transform_flag
         
         if self.transform_flag == 'ptf':
@@ -56,7 +56,11 @@ class RoadStatusDataset(Dataset):
         return pil.fromarray(result)
     
     def __getitem__(self, idx):
-        img = pil.open(self.ssd_dir+self.img_path[idx])
+        if ('NIA' in self.img_path[idx]) or ('벚꽃' in self.img_path[idx]):
+            img = pil.open(self.t7_dir+self.img_path[idx])
+        elif ('GeneralCase' in self.img_path[idx]):
+            img = pil.open(self.sata_dir+self.img_path[idx])
+
         if self.transform_flag == 'ptf':
             img = self.perspectiveTF(img)
         x = self.transform(img)

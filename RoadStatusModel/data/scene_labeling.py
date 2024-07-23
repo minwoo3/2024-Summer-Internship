@@ -29,6 +29,25 @@ def ptf(pts,img):
     result = cv2.warpPerspective(img, transform_mat, (width, height))
     return result, transform_mat
 
+def fft(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    fft = np.fft.fft2(img)
+    fshift = np.fft.fftshift(fft)
+    mag_spectrum = 20*np.log(np.abs(fshift))
+    (w,h) = fshift.shape
+    cx,cy = int(w/2),int(h/2)
+    n = 50
+    fshift[cx-n:cx+n+1,cy-n:cy+n+1] = 0
+    mag_spectrum_2 = 20*np.log(np.abs(0.01+fshift)).astype(int)
+    fshift_i = np.fft.ifftshift(fshift)
+    inv_fft = np.fft.ifft2(fshift_i).real
+    inv_fft = inv_fft.astype(np.float32)/np.max(inv_fft)
+    _, inv_fft = cv2.threshold(inv_fft, 0.3, 1.0, cv2.THRESH_BINARY)
+    inv_fft[inv_fft<=0] = 0
+    inv_fft[inv_fft > 0 ] = 255
+    return inv_fft
+
+
 class Viewer():
     def __init__(self, csv_path, index):
         self.csv_path = csv_path
@@ -40,7 +59,7 @@ class Viewer():
             self.img_path.append(path)
             self.img_label.append(int(label))
         self.curr_i = index
-        self.classes = ['clean','dirty']
+        self.classes = ['not right','right']
 
     def change_curr_dirs(self, dif):
         self.curr_i += dif
@@ -48,8 +67,8 @@ class Viewer():
             print('end of list')
             self.curr_i -= dif
 	
-    def close(self, index):
-        result = []                                                                     
+    def save(self, index):
+        result = []                                                             
         for i in range(len(self.img_path)):
             result.append([self.img_path[i],self.img_label[i]])
         csvwriter(self.csv_path,result)
@@ -59,26 +78,36 @@ class Viewer():
         while True:
             curr_img_path = self.img_path[self.curr_i]
             curr_img_label = self.img_label[self.curr_i]
-            img = cv2.imread(curr_img_path)
+            try:
+                img = cv2.imread(curr_img_path)
+                img = cv2.resize(img,(1280, 720))
+                cv2.putText(img, f"{curr_img_path} {self.classes[curr_img_label]} {self.curr_i}/{len(self.img_path)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,255), 2)
+                cv2.imshow('img',img)
+            except cv2.error as e:
+                print(f'{curr_img_path} is not available. Current index : {self.curr_i}')
+                self.save(self.curr_i -1)
+                self.change_curr_dirs(1)
 
-            img = cv2.resize(img,(1280, 720))
-            pts1 = [[350,400],[930,400],[5,600],[1275,600]]
-            ptf_img, transform_mat = ptf(pts1,img)
-            inverse_mat = np.linalg.inv(transform_mat)
-            original_image = cv2.warpPerspective(ptf_img, inverse_mat, (1280,720))
+            
+            # pts1 = [[350,400],[930,400],[5,600],[1275,600]]
+            # ptf_img, transform_mat = ptf(pts1,img)
+            # inverse_mat = np.linalg.inv(transform_mat)
+            # original_image = cv2.warpPerspective(ptf_img, inverse_mat, (1280,720))
             # print(ptf_img.shape)
             # img = cv2.Canny(ptf_img,50,150)
 
-            cv2.putText(img, f"{curr_img_path} {self.classes[curr_img_label]} {self.curr_i}/{len(self.img_path)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,255,0), 2)
-            for x, y in pts1:
-                cv2.circle(img, (x, y), 10, (0, 255, 0), -1)
-            cv2.imshow('viewer', img)
-            cv2.imshow('ptf',ptf_img)
-            cv2.imshow('inverse',original_image)
+            # fft_img = fft(img)
+            
+            # for x, y in pts1:
+            #     cv2.circle(img, (x, y), 10, (0, 255, 0), -1)
+            
+            # cv2.imshow('viewer', fft_img)
+            # cv2.imshow('ptf',ptf_img)
+            # cv2.imshow('inverse',original_image)
 
 
             pressed = cv2.waitKeyEx(15)
-            if pressed == 27: self.close(self.curr_i); break # Esc
+            if pressed == 27: self.save(self.curr_i); break # Esc
             elif pressed == 96: self.change_curr_dirs(-1) # `
             elif pressed == 9: self.change_curr_dirs(1) # Tab
             elif pressed == 48: self.img_label[self.curr_i] = 0; self.change_curr_dirs(1)
