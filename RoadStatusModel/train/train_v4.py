@@ -1,8 +1,10 @@
 import torch
+torch.set_float32_matmul_precision('medium')
 import sys, os
 import argparse, getpass
 import pytorch_lightning as pl
 from datetime import datetime
+from pytorch_lightning.strategies import DDPStrategy
 from pytorch_lightning.callbacks import ModelCheckpoint, TQDMProgressBar, EarlyStopping
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from model.module_v3 import ResnetModule, CNNModule
@@ -30,7 +32,7 @@ if args.model in ['cnn','CNN']:
     example_img, _, _ = datamodule.train_dataset[0]
     transformed_img_size = example_img.shape[-2:]  # (height, width)
 
-    module = CNNModule(img_width=transformed_img_size[1], img_height=transformed_img_size[0], opt=opt)
+    module = CNNModule(img_width=transformed_img_size[1], img_height=transformed_img_size[0], opt=opt, ckpt_name = ckpt_name)
     
 elif args.model in ['resnet','res','ResNet']:
     ckpt_dir = f'{ssd_dir}/checkpoint/resnet'
@@ -60,7 +62,7 @@ torch.cuda.empty_cache()
 
 accelerator="gpu"
 devices = 2
-strategy='ddp'
+strategy=DDPStrategy(find_unused_parameters=False)
 max_epochs=20
 callbacks=[TQDMProgressBar()]
 precision=16

@@ -30,10 +30,10 @@ class RoadStadusDataModule(pl.LightningDataModule):
 
     # num_worker: 
     def train_dataloader(self):
-        return DataLoader(dataset=self.train_dataset, batch_size=self.batch_size, shuffle=True, drop_last=False, num_workers=16)
+        return DataLoader(dataset=self.train_dataset, batch_size=self.batch_size, shuffle=True, drop_last=False, num_workers=16, pin_memory = True)
     
     def val_dataloader(self):
-        return DataLoader(dataset=self.valid_dataset,batch_size=self.batch_size,shuffle=False,drop_last=False, num_workers=16)
+        return DataLoader(dataset=self.valid_dataset,batch_size=self.batch_size,shuffle=False,drop_last=False, num_workers=16, pin_memory = True)
     
     def test_dataloader(self):
-        return DataLoader(dataset=self.test_dataset,batch_size=self.batch_size,shuffle=False,drop_last=False, num_workers=16)
+        return DataLoader(dataset=self.test_dataset,batch_size=self.batch_size,shuffle=False,drop_last=False, num_workers=16, pin_memory = True)

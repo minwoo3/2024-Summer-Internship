@@ -1,5 +1,6 @@
 import csv
 import torch
+import getpass
 import sys, os, io
 import torchmetrics
 import numpy as np
@@ -30,6 +31,84 @@ def txtwriter(txt_dir, target_list):
     with open(txt_dir, 'w', newline="") as file:
         file.write('\n'.join(target_list))
     print(f'List Saved at {txt_dir} Succesfully')
+    
+class CNNModule(pl.LightningModule):
+    def __init__(self, opt, img_width, img_height, ckpt_name):
+        super(CNNModule, self).__init__()
+        self.opt = opt
+        self.model = CNNModel(img_width, img_height)
+        self.confusion_matrix = torchmetrics.ConfusionMatrix(task = 'binary', num_classes=2)
+        self.accuracy = BinaryAccuracy()
+        
+        self.ckpt_name = ckpt_name
+        self.ssd_dir = f'/media/{getpass.getuser()}/T7/2024-Summer-Internship/scene/{self.ckpt_name}'
+
+    def forward(self, x):
+        return self.model(x)
+
+    def training_step(self, batch, batch_idx):
+        im, label, path = batch 
+        im, label = im.to(self.device), label.to(self.device)
+        pred = self.model(im)
+        train_loss = F.cross_entropy(pred, label)
+        batch_size = im.size(0)
+        self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True,batch_size=batch_size, sync_dist = True)
+        return train_loss 
+    
+    def validation_step(self, batch, batch_idx):
+        im, label, path = batch
+        im, label = im.to(self.device), label.to(self.device)
+        with torch.no_grad():
+            pred = self.model(im)
+            val_loss = F.cross_entropy(pred, label)
+        batch_size = im.size(0)
+        self.log('val/loss', val_loss, on_step=True, on_epoch=True, prog_bar=True,batch_size=batch_size, sync_dist = True)
+        return val_loss
+    
+    def test_step(self, batch, batch_idx):
+        self.model.eval()
+        imgs, labels, paths = batch
+        preds = self.model(imgs)
+        test_loss = F.cross_entropy(preds, labels)
+        batch_size = imgs.size(0)
+        self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
+        pred_class = torch.argmax(preds, dim=1)
+        self.confusion_matrix(pred_class, labels)
+        self.accuracy(pred_class, labels)
+        false_batch = []
+        for i in range(len(labels)):
+            pred = pred_class[i].item()
+            label = labels[i].item()
+            path = paths[i]
+            if (label == 0 and pred == 1) or (label == 1 and pred == 0):
+                false_batch.append([path,label])
+
+        return false_batch
+    
+    def test_epoch_end(self, outputs):
+        cm = self.confusion_matrix.compute().cpu()
+        accuracy = self.accuracy.compute().cpu()
+        print("Confusion Matrix:\n", cm.numpy())
+        print("Test Accuracy:", accuracy.numpy())
+        self.confusion_matrix.reset()
+        self.accuracy.reset()
+        
+        false_batch = [path for batch in outputs for path in batch]
+        csvwriter(f'{self.ssd_dir}/{self.ckpt_name}_result.csv', false_batch)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, verbose=True)
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': {
+                'scheduler': scheduler,
+                'monitor': 'val/loss'
+            }
+        }
+    @property
+    def featuremap(self):
+        return self.model.featuremap
 
 class ResnetModule(pl.LightningModule):
     def __init__(self, opt):
@@ -115,74 +194,3 @@ class ResnetModule(pl.LightningModule):
         self._featuremap = value
 
 
-class CNNModule(pl.LightningModule):
-    def __init__(self, opt, img_width, img_height):
-        super(CNNModule, self).__init__()
-        self.opt = opt
-        self.model = CNNModel(img_width, img_height)
-        self.confusion_matrix = torchmetrics.ConfusionMatrix(task = 'binary', num_classes=2)
-        self.accuracy = BinaryAccuracy()
-
-    def forward(self, x):
-        return self.model(x)
-
-    def training_step(self, batch, batch_idx):
-        im, label, path = batch 
-        im, label = im.to(self.device), label.to(self.device)
-        pred = self.model(im)
-        train_loss = F.cross_entropy(pred, label)
-        self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True)
-        return train_loss 
-    
-    def validation_step(self, batch, batch_idx):
-        im, label, path = batch
-        im, label = im.to(self.device), label.to(self.device)
-        with torch.no_grad():
-            pred = self.model(im)
-            val_loss = F.cross_entropy(pred, label)
-        self.log('val/loss', val_loss, on_step=True, on_epoch=True, prog_bar=True)
-        return val_loss
-    
-    def test_step(self, batch, batch_idx):
-        self.model.eval()
-        imgs, labels, paths = batch
-        preds = self.model(imgs)
-        test_loss = F.cross_entropy(preds, labels)
-        self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True)
-        pred_class = torch.argmax(preds, dim=1)
-        self.confusion_matrix(pred_class, labels)
-        self.accuracy(pred_class, labels)
-        false_batch = []
-        for i in range(len(labels)):
-            pred = pred_class[i].item()
-            label = labels[i].item()
-            path = paths[i]
-            if (label == 0 and pred == 1) or (label == 1 and pred == 0):
-                false_batch.append([path,label])
-
-        return false_batch
-    
-    def test_epoch_end(self, outputs):
-        cm = self.confusion_matrix.compute().cpu()
-        accuracy = self.accuracy.compute().cpu()
-        print("Confusion Matrix:\n", cm.numpy())
-        print("Test Accuracy:", accuracy.numpy())
-        self.confusion_matrix.reset()
-        self.accuracy.reset()
-        
-        false_batch = [path for batch in outputs for path in batch]
-        csvwriter('result.csv', false_batch)
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt)
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, verbose=True)
-        return {
-            'optimizer': optimizer,
-            'lr_scheduler': {
-                'scheduler': scheduler,
-                'monitor': 'val/loss'
-            }
-        }
-    @property
-    def featuremap(self):
-        return self.model.featuremap
