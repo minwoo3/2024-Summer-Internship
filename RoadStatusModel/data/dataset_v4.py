@@ -46,7 +46,7 @@ class RoadStatusDataset(Dataset):
             bin = np.fromfile(dir, dtype = bool).reshape(930, 1440)
             uy, ux = bin.nonzero()
         elif '벚꽃' in dir or 'GeneralCase' in dir:
-            bin = np.fromfile(dir, dtype = np.float16)
+            bin = np.fromfile(dir, dtype = np.float16).reshape(-1,3)
             uy, ux = bin[:,1], bin[:,0]
 
         ux = ux / 1440 * self.width
