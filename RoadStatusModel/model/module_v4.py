@@ -7,13 +7,10 @@ import numpy as np
 import torch.nn as nn
 import PIL.Image as Image
 from torchvision import transforms
-import torch.optim as optim
-from typing import Any, Optional
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torchvision.models import resnet18, resnet34, resnet50
 from torchmetrics.classification import BinaryAccuracy
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -65,15 +62,18 @@ class CNNModule(pl.LightningModule):
         return val_loss
     
     def test_step(self, batch, batch_idx):
-        img, label, path, mask = batch
-        im, label, mask = im.to(self.device), label.to(self.device), mask.to(self.device)
-        pred = self.model(img, path)
+        img, label, path, _ = batch
+        im, label = im.to(self.device), label.to(self.device)
+        mask = np.ones((img.shape[2],img.shape[3]),dtype=np.int8) #(batch_size, channel, width, height)
+        pred = self.model(img, mask)
         test_loss = F.cross_entropy(pred, label)
         batch_size = img.size(0)
         self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
-        pred_class = torch.argmax(pred, dim=1)
+        
+        pred_class = torch.argmax(torch.softmax(pred, dim=1), dim=1)
         self.confusion_matrix(pred_class, label)
         self.accuracy(pred_class, label)
+        
         false_batch = []
         for i in range(len(label)):
             pred = pred_class[i].item()
@@ -81,6 +81,7 @@ class CNNModule(pl.LightningModule):
             path = path[i]
             if (label == 0 and pred == 1) or (label == 1 and pred == 0):
                 false_batch.append([path,label])
+
         return false_batch
     
     def test_epoch_end(self, outputs):

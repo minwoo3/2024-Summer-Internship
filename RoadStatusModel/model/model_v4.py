@@ -23,19 +23,19 @@ class CNNModel(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.fc_input_dim = self._get_fc_input_dim(img_width,img_height)
-        self.fc = nn.Linear(self.fc_input_dim, 2)
+        self._get_fc_input_dim(img_width,img_height)
+        self.fc = nn.Linear(self.feature_c*self.feature_w*self.feature_h, 2)
     
     def _get_fc_input_dim(self, img_width, img_height):
         x = torch.randn(1,3,img_width,img_height)
         x = self.sequential(x)
-        return x.numel()
+        self.feature_c, self.feature_w, self.feature_h = x.size(1), x.size(2), x.size(3)
 
     def forward(self, x, mask):
         x = self.sequential(x)
         self.featuremap = x
         if mask != None:
-            mask = F.interpolate(mask.unsqueeze(1), size = x.shape[2:], mode = 'nearest')
+            mask = F.interpolate(mask.unsqueeze(1), size = (self.feature_h,self.feature_w), mode = 'nearest') # 마스크 feature 사이즈로 조정
             x = x*mask
         x = torch.flatten(x, 1)
         x = self.fc(x)

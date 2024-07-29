@@ -42,10 +42,15 @@ class RoadStatusDataset(Dataset):
             ])
     
     def getmask(self,dir):
-        bin = np.fromfile(dir, dtype = bool).reshape(930, 1440)
-        uy, ux = bin.nonzero()
-        ux = ux / 930 * self.width
-        uy = uy / 1440 * self.height
+        if 'NIA' in dir:
+            bin = np.fromfile(dir, dtype = bool).reshape(930, 1440)
+            uy, ux = bin.nonzero()
+        elif '벚꽃' in dir or 'GeneralCase' in dir:
+            bin = np.fromfile(dir, dtype = np.float16)
+            uy, ux = bin[:,1], bin[:,0]
+
+        ux = ux / 1440 * self.width
+        uy = uy / 930 * self.height
         ux, uy = np.clip(ux.astype(int), 0, self.width - 1), np.clip(uy.astype(int), 0, self.height - 1)
         
         mask = np.zeros((self.height,self.width),dtype=np.uint8)
@@ -53,6 +58,7 @@ class RoadStatusDataset(Dataset):
         kernel_size = 50
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
         mask = cv2.dilate(mask, kernel, iterations=1)
+        
         return mask
 
     def perspectiveTF(self,img):
@@ -73,18 +79,14 @@ class RoadStatusDataset(Dataset):
     
     def __getitem__(self, idx):
         mask = None
+        # /NIA2021/10009/image0/10009_009.jpg,0
         if ('NIA' in self.img_path[idx]) or ('벚꽃' in self.img_path[idx]):
             img = pil.open(self.t7_dir+self.img_path[idx])
-            
-            if self.transform_flag == "mask":
-                mask = self.getmask(f'{self.sata_dir}/camera_inference/{self.img_path[1:-4]}.bin', self.width, self.height)
-        
-        # /NIA2021/10009/image0/10009_009.jpg,0
         elif ('GeneralCase' in self.img_path[idx]):
             img = pil.open(self.sata_dir+self.img_path[idx])
 
-            if self.transform_flag == "mask":
-                mask = self.getmask(f'{self.sata_dir}/GeneralCase/camera_inference/{self.img_path[1:-4]}.bin', self.width, self.height)
+        if self.transform_flag == "mask":
+            mask = self.getmask(f'{self.sata_dir}/camera_inference/{self.img_path[idx][1:-4]}.bin') 
         
         if self.transform_flag == 'ptf':
             img = self.perspectiveTF(img)
