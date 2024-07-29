@@ -7,7 +7,7 @@ from datetime import datetime
 from pytorch_lightning.strategies import DDPStrategy
 from pytorch_lightning.callbacks import ModelCheckpoint, TQDMProgressBar, EarlyStopping
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.module_v3 import ResnetModule, CNNModule
+from model.module_v4 import ResnetModule, CNNModule
 from data.datamodule_v3 import RoadStadusDataModule
 
 username = getpass.getuser()

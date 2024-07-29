@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-import math
 
 class CNNModel(nn.Module):
     def __init__(self, img_width, img_height):
@@ -32,9 +31,12 @@ class CNNModel(nn.Module):
         x = self.sequential(x)
         return x.numel()
 
-    def forward(self, x):
+    def forward(self, x, mask):
         x = self.sequential(x)
         self.featuremap = x
+        if mask != None:
+            mask = F.interpolate(mask.unsqueeze(1), size = x.shape[2:], mode = 'nearest')
+            x = x*mask
         x = torch.flatten(x, 1)
         x = self.fc(x)
         return x

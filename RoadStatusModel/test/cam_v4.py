@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from torchvision import transforms
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.module_v3 import CNNModule, ResnetModule
+from model.module_v4 import CNNModule, ResnetModule
 
 def drawCAM(argmax, width, height):
     global model

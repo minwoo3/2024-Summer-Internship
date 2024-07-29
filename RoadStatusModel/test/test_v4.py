@@ -6,7 +6,7 @@ import argparse
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.module_v3 import CNNModule, ResnetModule
+from model.module_v4 import CNNModule, ResnetModule
 from data.datamodule_v3 import RoadStadusDataModule
 
 username = getpass.getuser()

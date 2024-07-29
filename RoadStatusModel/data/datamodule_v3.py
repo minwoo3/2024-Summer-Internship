@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import pytorch_lightning as pl
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from data.dataset_v3 import RoadStatusDataset
+from data.dataset_v4 import RoadStatusDataset
 
 class RoadStadusDataModule(pl.LightningDataModule):
     def __init__(self, ckpt_name, batch_size: int =8, transform_flag: str =''):

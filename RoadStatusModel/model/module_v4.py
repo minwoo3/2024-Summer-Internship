@@ -17,7 +17,7 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torchvision.models import resnet18, resnet34, resnet50
 from torchmetrics.classification import BinaryAccuracy
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.model_v3 import CNNModel
+from model.model_v4 import CNNModel
 
 def csvwriter(csv_dir, target_list):
     with open(csv_dir, 'w', newline="") as file:
@@ -47,42 +47,40 @@ class CNNModule(pl.LightningModule):
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
-        im, label, path = batch 
-        im, label = im.to(self.device), label.to(self.device)
-        pred = self.model(im)
+        im, label, path, mask = batch 
+        im, label, mask = im.to(self.device), label.to(self.device), mask.to(self.device)
+        pred = self.model(im, mask)
         train_loss = F.cross_entropy(pred, label)
         batch_size = im.size(0)
-        self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True,batch_size=batch_size, sync_dist = True)
+        self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size, sync_dist = True)
         return train_loss 
     
     def validation_step(self, batch, batch_idx):
-        im, label, path = batch
-        im, label = im.to(self.device), label.to(self.device)
-        with torch.no_grad():
-            pred = self.model(im)
-            val_loss = F.cross_entropy(pred, label)
+        im, label, path, mask = batch
+        im, label, mask = im.to(self.device), label.to(self.device), mask.to(self.device)
+        pred = self.model(im, mask)
+        val_loss = F.cross_entropy(pred, label)
         batch_size = im.size(0)
         self.log('val/loss', val_loss, on_step=True, on_epoch=True, prog_bar=True,batch_size=batch_size, sync_dist = True)
         return val_loss
     
     def test_step(self, batch, batch_idx):
-        self.model.eval()
-        imgs, labels, paths = batch
-        preds = self.model(imgs)
-        test_loss = F.cross_entropy(preds, labels)
-        batch_size = imgs.size(0)
+        img, label, path, mask = batch
+        im, label, mask = im.to(self.device), label.to(self.device), mask.to(self.device)
+        pred = self.model(img, path)
+        test_loss = F.cross_entropy(pred, label)
+        batch_size = img.size(0)
         self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
-        pred_class = torch.argmax(preds, dim=1)
-        self.confusion_matrix(pred_class, labels)
-        self.accuracy(pred_class, labels)
+        pred_class = torch.argmax(pred, dim=1)
+        self.confusion_matrix(pred_class, label)
+        self.accuracy(pred_class, label)
         false_batch = []
-        for i in range(len(labels)):
+        for i in range(len(label)):
             pred = pred_class[i].item()
-            label = labels[i].item()
-            path = paths[i]
+            label = label[i].item()
+            path = path[i]
             if (label == 0 and pred == 1) or (label == 1 and pred == 0):
                 false_batch.append([path,label])
-
         return false_batch
     
     def test_epoch_end(self, outputs):
@@ -92,7 +90,6 @@ class CNNModule(pl.LightningModule):
         print("Test Accuracy:", accuracy.numpy())
         self.confusion_matrix.reset()
         self.accuracy.reset()
-        
         false_batch = [path for batch in outputs for path in batch]
         csvwriter(f'{self.ssd_dir}/{self.ckpt_name}_result.csv', false_batch)
 
