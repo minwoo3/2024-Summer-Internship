@@ -34,9 +34,7 @@ class CNNModel(nn.Module):
     def forward(self, x, mask):
         x = self.sequential(x)
         self.featuremap = x
-        if mask != None:
-            mask = F.interpolate(mask.unsqueeze(1), size = (self.feature_h,self.feature_w), mode = 'nearest') # 마스크 feature 사이즈로 조정
-            x = x*mask
+        x = x * mask.unsqueeze(1)
         x = torch.flatten(x, 1)
         x = self.fc(x)
         return x

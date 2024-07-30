@@ -25,7 +25,7 @@ class RoadStadusDataModule(pl.LightningDataModule):
             self.train_dataset = RoadStatusDataset(self.front_path+'/train.csv',self.transform_flag)
             self.valid_dataset = RoadStatusDataset(self.front_path+'/val.csv',self.transform_flag)
         if stage == 'test' or stage is None:         
-            self.test_dataset = RoadStatusDataset(self.front_path+'/test3.csv',self.transform_flag)
+            self.test_dataset = RoadStatusDataset(self.front_path+'/test.csv',self.transform_flag)
 
 
     # num_worker: 
