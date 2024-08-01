@@ -12,7 +12,7 @@ class RoadStatusDataset(Dataset):
             data = list(csv.reader(f))
         self.img_path, self.img_label = [], []
         self.width, self.height = 1280, 720
-        self.mask_width, self.mask_height = 40, 22
+        self.mask_width, self.mask_height = 1280, 720
         for path, label in data:
             self.img_path.append(path)
             self.img_label.append(int(label))
@@ -64,7 +64,7 @@ class RoadStatusDataset(Dataset):
         mask = np.zeros((self.mask_height,self.mask_width),dtype=np.uint8)
         mask[lane_y, lane_x] = 255
         mask[curb_y, curb_x] = 255
-        kernel_size = 5
+        kernel_size = 50
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
         mask = cv2.dilate(mask, kernel, iterations=1)
         return mask
@@ -86,23 +86,28 @@ class RoadStatusDataset(Dataset):
         return pil.fromarray(result)
     
     def __getitem__(self, idx):
-        mask = torch.ones((self.mask_height,self.mask_width))
+        
         # /NIA2021/10009/image0/10009_009.jpg,0
         if ('NIA' in self.img_path[idx]) or ('벚꽃' in self.img_path[idx]):
             img = pil.open(self.t7_dir+self.img_path[idx])
         elif ('GeneralCase' in self.img_path[idx]):
             img = pil.open(self.sata_dir+self.img_path[idx])
 
+        mask = torch.ones((self.mask_height,self.mask_width))
         if self.transform_flag == "mask":
             curb_path = f'{self.sata_dir}/camera_inference/연석/{self.img_path[idx][1:-4]}.bin'
             lane_path = f'{self.sata_dir}/camera_inference/차선/{self.img_path[idx][1:-4]}.bin'
             mask = self.getmask(curb_path, lane_path)
+        
         if self.transform_flag == 'ptf':
             img = self.perspectiveTF(img)
 
         x = self.transform(img)
+        
+        x = x*mask #원본 이미지 masking
+
         y = self.img_label[idx]
-        return x, y, self.img_path[idx], mask
+        return x, y, self.img_path[idx]
     
     def __len__(self):
         return len(self.img_path)

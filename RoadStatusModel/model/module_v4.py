@@ -44,27 +44,27 @@ class CNNModule(pl.LightningModule):
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
-        im, label, path, mask = batch 
-        im, label, mask = im.to(self.device), label.to(self.device), mask.to(self.device)
-        pred = self.model(im, mask)
+        im, label, path = batch 
+        im, label = im.to(self.device), label.to(self.device)
+        pred = self.model(im)
         train_loss = F.cross_entropy(pred, label)
         batch_size = im.size(0)
         self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size, sync_dist = True)
         return train_loss 
     
     def validation_step(self, batch, batch_idx):
-        im, label, path, mask = batch
-        im, label, mask = im.to(self.device), label.to(self.device), mask.to(self.device)
-        pred = self.model(im, mask)
+        im, label, path = batch 
+        im, label = im.to(self.device), label.to(self.device)
+        pred = self.model(im)
         val_loss = F.cross_entropy(pred, label)
         batch_size = im.size(0)
         self.log('val/loss', val_loss, on_step=True, on_epoch=True, prog_bar=True,batch_size=batch_size, sync_dist = True)
         return val_loss
     
     def test_step(self, batch, batch_idx):
-        ims, labels, paths, masks = batch
-        ims, labels, masks = ims.to(self.device), labels.to(self.device), masks.to(self.device)
-        pred = self.model(ims, masks)
+        ims, labels, paths = batch
+        ims, labels = ims.to(self.device), labels.to(self.device)
+        pred = self.model(ims)
         test_loss = F.cross_entropy(pred, labels)
         batch_size = ims.size(0)
         self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
