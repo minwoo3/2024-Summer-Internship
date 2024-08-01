@@ -86,7 +86,7 @@ class RoadStatusDataset(Dataset):
         return pil.fromarray(result)
     
     def __getitem__(self, idx):
-        mask = torch.ones((self.mask_width,self.mask_height))
+        mask = torch.ones((self.mask_height,self.mask_width))
         # /NIA2021/10009/image0/10009_009.jpg,0
         if ('NIA' in self.img_path[idx]) or ('벚꽃' in self.img_path[idx]):
             img = pil.open(self.t7_dir+self.img_path[idx])

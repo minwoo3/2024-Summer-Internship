@@ -29,7 +29,7 @@ if args.model in ['cnn','CNN']:
     print(ckpt_name,'will be save at', ckpt_dir+'/'+ckpt_name+'.ckpt')
     datamodule = RoadStadusDataModule(ckpt_name = ckpt_name, batch_size = batch_size, transform_flag = args.transform)
     datamodule.setup(stage='fit')
-    example_img, _, _ = datamodule.train_dataset[0]
+    example_img, _, _, _ = datamodule.train_dataset[0]
     transformed_img_size = example_img.shape[-2:]  # (height, width)
 
     module = CNNModule(img_width=transformed_img_size[1], img_height=transformed_img_size[0], opt=opt, ckpt_name = ckpt_name)

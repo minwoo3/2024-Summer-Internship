@@ -65,7 +65,7 @@ class Viewer():
                                                             transform_flag = self.transform_flag)
         datamodule.setup(stage='fit')
 
-        example_img, _, _ = datamodule.train_dataset[0]
+        example_img, _, _, _ = datamodule.train_dataset[0]
         self.img_height, self.img_width = example_img.shape[-2:]  # (height, width)
 
         if model in ['cnn','CNN']:
@@ -134,8 +134,8 @@ class Viewer():
                 img = img[y_start:y_end,x_start:x_end]
                 
             input_img = self.transform(img).unsqueeze(0)
-            # print(input_img.shape)
-            output = self.module(input_img)
+            mask = torch.ones((1,1,22,40))
+            output = self.module.model(input_img, mask)
 
             cam = self.drawCAM(self.img_width, self.img_height)
 
@@ -159,7 +159,7 @@ class Viewer():
             # for x, y in pts1:
             #     cv2.circle(overlay, (x, y), 10, (0, 255, 0), -1)
             cv2.imshow('overlay',overlay)
-            cv2.imshow('img',img)
+            # cv2.imshow('img',img)
 
             pressed = cv2.waitKeyEx(15)
             if pressed == 27: break # Esc

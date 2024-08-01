@@ -62,23 +62,22 @@ class CNNModule(pl.LightningModule):
         return val_loss
     
     def test_step(self, batch, batch_idx):
-        img, label, path, _ = batch
-        im, label = im.to(self.device), label.to(self.device)
-        mask = np.ones((img.shape[2],img.shape[3]),dtype=np.int8) #(batch_size, channel, width, height)
-        pred = self.model(img, mask)
-        test_loss = F.cross_entropy(pred, label)
-        batch_size = img.size(0)
+        ims, labels, paths, masks = batch
+        ims, labels, masks = ims.to(self.device), labels.to(self.device), masks.to(self.device)
+        pred = self.model(ims, masks)
+        test_loss = F.cross_entropy(pred, labels)
+        batch_size = ims.size(0)
         self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
         
         pred_class = torch.argmax(torch.softmax(pred, dim=1), dim=1)
-        self.confusion_matrix(pred_class, label)
-        self.accuracy(pred_class, label)
+        self.confusion_matrix(pred_class, labels)
+        self.accuracy(pred_class, labels)
         
         false_batch = []
-        for i in range(len(label)):
+        for i in range(len(labels)):
             pred = pred_class[i].item()
-            label = label[i].item()
-            path = path[i]
+            label = labels[i].item()
+            path = paths[i]
             if (label == 0 and pred == 1) or (label == 1 and pred == 0):
                 false_batch.append([path,label])
 

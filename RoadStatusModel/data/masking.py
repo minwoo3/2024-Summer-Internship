@@ -29,6 +29,9 @@ class Viewer():
         if self.curr_i == len(self.img_path):
             print('end of list')
             self.curr_i -= dif
+        elif self.curr_i == 0:
+            print('first of list')
+            self.curr_i += dif
 	
     def save(self, index):
         result = []                                                             
@@ -121,8 +124,10 @@ class Viewer():
 
             pressed = cv2.waitKeyEx(15)
             if pressed == 27: self.save(self.curr_i); break # Esc
-            elif pressed == 96: self.change_curr_dirs(-1) # `
-            elif pressed == 9: self.change_curr_dirs(1) # Tab
+            elif pressed == 56: self.change_curr_dirs(100) # 8
+            elif pressed == 54: self.change_curr_dirs(1) # 6
+            elif pressed == 52: self.change_curr_dirs(-1) # 4
+            elif pressed == 50: self.change_curr_dirs(-100) # 2
             elif pressed == 48: self.img_label[self.curr_i] = 0; self.change_curr_dirs(1)
             elif pressed == 49: self.img_label[self.curr_i] = 1; self.change_curr_dirs(1)
             elif pressed == ord('o'): self.changemask()
