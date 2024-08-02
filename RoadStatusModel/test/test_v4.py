@@ -23,7 +23,7 @@ datamodule = RoadStadusDataModule(ckpt_name = args.checkpoint, batch_size = batc
 datamodule.setup(stage='fit')
 
 # Get transformed image size
-example_img, _, _, _ = datamodule.train_dataset[0]
+example_img, _, _ = datamodule.train_dataset[0]
 transformed_img_size = example_img.shape[-2:]  # (height, width)
 # print(transformed_img_size)
 
