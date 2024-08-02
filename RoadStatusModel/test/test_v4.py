@@ -22,10 +22,8 @@ datamodule = RoadStadusDataModule(ckpt_name = args.checkpoint, batch_size = batc
 
 datamodule.setup(stage='fit')
 
-# Get transformed image size
 example_img, _, _ = datamodule.train_dataset[0]
 transformed_img_size = example_img.shape[-2:]  # (height, width)
-# print(transformed_img_size)
 
 if args.model in ['cnn','CNN']:
     ssd_dir = f'/media/{username}/T7/2024-Summer-Internship/checkpoint/cnn'
@@ -44,7 +42,3 @@ module_name = module.__class__.__name__
 trainer = Trainer(accelerator='gpu', devices=1)
 trainer.test(module, dataloaders=datamodule)
 
-################ Result ###################
-# CNNModule_epochs_20_lr_1e-05_crop.ckpt: 
-# True Positive: 6000, True Negative: 7601, False Positive: 0, False Negative: 0
-# Accuracy: 100.0%, Recall: 100.0%, Specificity: 100.0%, Precision: 100.0%, F1: 1.0

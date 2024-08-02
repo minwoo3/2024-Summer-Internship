@@ -34,7 +34,6 @@ class CNNModel(nn.Module):
     def forward(self, x):
         x = self.sequential(x)
         self.featuremap = x
-        # x = x * mask.unsqueeze(1) # feature 단에서 마스킹 진행
         x = torch.flatten(x, 1)
         x = self.fc(x)
         return x
