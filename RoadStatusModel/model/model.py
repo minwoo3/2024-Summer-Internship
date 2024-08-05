@@ -7,7 +7,7 @@ class CNNModel(nn.Module):
         super(CNNModel, self).__init__()
         self.featuremap = None
         self.sequential = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1), 
+            nn.Conv2d(in_channels=4, out_channels=32, kernel_size=3, padding=1), 
             nn.ReLU(),
             nn.MaxPool2d(2, 2), 
             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1), 
@@ -27,7 +27,7 @@ class CNNModel(nn.Module):
         self.fc = nn.Linear(self.feature_c*self.feature_w*self.feature_h, 2)
     
     def _get_fc_input_dim(self, img_width, img_height):
-        x = torch.randn(1,3,img_width,img_height)
+        x = torch.randn(1,4,img_width,img_height)
         x = self.sequential(x)
         self.feature_c, self.feature_w, self.feature_h = x.size(1), x.size(2), x.size(3)
 

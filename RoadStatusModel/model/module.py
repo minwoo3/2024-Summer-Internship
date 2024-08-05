@@ -37,6 +37,10 @@ class CNNModule(pl.LightningModule):
         self.confusion_matrix = torchmetrics.ConfusionMatrix(task = 'binary', num_classes=2)
         self.accuracy = BinaryAccuracy()
         
+        self.class_amount = [110928,30588] # clean, dirty
+        self.class_weight = [1- x/sum(self.class_amount) for x in self.class_amount]
+        # self.class_weight = torch.tensor(self.class_weight, device = self.device)
+
         self.ckpt_name = ckpt_name
         self.ssd_dir = f'/media/{getpass.getuser()}/T7/2024-Summer-Internship/scene/{self.ckpt_name}'
 
@@ -47,7 +51,7 @@ class CNNModule(pl.LightningModule):
         im, label, path = batch 
         im, label = im.to(self.device), label.to(self.device)
         pred = self.model(im)
-        train_loss = F.cross_entropy(pred, label)
+        train_loss = F.cross_entropy(pred, label, weight = torch.tensor(self.class_weight, device = 'cuda'))
         batch_size = im.size(0)
         self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size, sync_dist = True)
         return train_loss 
@@ -56,7 +60,7 @@ class CNNModule(pl.LightningModule):
         im, label, path = batch 
         im, label = im.to(self.device), label.to(self.device)
         pred = self.model(im)
-        val_loss = F.cross_entropy(pred, label)
+        val_loss = F.cross_entropy(pred, label, weight = torch.tensor(self.class_weight, device = 'cuda'))
         batch_size = im.size(0)
         self.log('val/loss', val_loss, on_step=True, on_epoch=True, prog_bar=True,batch_size=batch_size, sync_dist = True)
         return val_loss
@@ -65,7 +69,7 @@ class CNNModule(pl.LightningModule):
         ims, labels, paths = batch
         ims, labels = ims.to(self.device), labels.to(self.device)
         pred = self.model(ims)
-        test_loss = F.cross_entropy(pred, labels)
+        test_loss = F.cross_entropy(pred, labels, weight = torch.tensor(self.class_weight, device = 'cuda'))
         batch_size = ims.size(0)
         self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
         

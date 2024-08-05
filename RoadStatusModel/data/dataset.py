@@ -24,20 +24,20 @@ class RoadStatusDataset(Dataset):
         if self.transform_flag == 'ptf':
             self.transform = transforms.Compose([
                 transforms.ToTensor(),
-                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.247, 0.243, 0.261)),
+                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
             ])
         elif self.transform_flag == 'crop':
             self.transform = transforms.Compose([
                 transforms.Resize((self.height,self.width)),
                 transforms.Lambda(lambda img: img.crop((0, int(img.height*0.5), img.width, int(img.height*0.9)))),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.247, 0.243, 0.261)),
+                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
             ])
         else:
             self.transform = transforms.Compose([
                 transforms.Resize((self.height,self.width)),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.247, 0.243, 0.261)),
+                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
             ])
     def openbin(self,dir):
         if '연석' in dir:
@@ -85,8 +85,16 @@ class RoadStatusDataset(Dataset):
         result = cv2.warpPerspective(np.array(img), transform_mat, (self.width, self.height))
         return pil.fromarray(result)
     
+    def stack(self,img,mask):
+        # np.zeros((행,열))
+        combined = np.zeros((self.height, self.width,4), dtype=np.uint8)
+        # PIL.Image((열,행))
+        img = np.array(img.resize((self.width,self.height)))
+        combined[:,:,:3] = img.astype(np.uint8)
+        combined[:,:,3] = mask
+        return pil.fromarray(combined)
+
     def __getitem__(self, idx):
-        
         # /NIA2021/10009/image0/10009_009.jpg,0
         if ('NIA' in self.img_path[idx]) or ('벚꽃' in self.img_path[idx]):
             img = pil.open(self.t7_dir+self.img_path[idx])
@@ -98,14 +106,12 @@ class RoadStatusDataset(Dataset):
             curb_path = f'{self.sata_dir}/camera_inference/연석/{self.img_path[idx][1:-4]}.bin'
             lane_path = f'{self.sata_dir}/camera_inference/차선/{self.img_path[idx][1:-4]}.bin'
             mask = self.getmask(curb_path, lane_path)
-        
+            img = self.stack(img,mask)
+
         if self.transform_flag == 'ptf':
-            img = self.perspectiveTF(img)
-
-        x = self.transform(img)
+            img = self.perspectiveTF(img)      
         
-        x = x*mask #원본 이미지 masking
-
+        x = self.transform(img)
         y = self.img_label[idx]
         return x, y, self.img_path[idx]
     

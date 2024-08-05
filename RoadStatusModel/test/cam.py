@@ -1,15 +1,8 @@
-import csv
-import cv2
-import torch
-import math
-import copy
-import sys, os
-import argparse
-import getpass
+import csv, cv2, torch, sys, os
+import argparse, getpass
 import numpy as np
 from PIL import Image
 import torchvision.transforms as transforms
-import matplotlib
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from torchvision import transforms
@@ -65,7 +58,7 @@ class Viewer():
                                                             transform_flag = self.transform_flag)
         datamodule.setup(stage='fit')
 
-        example_img, _, _, _ = datamodule.train_dataset[0]
+        example_img, _, _ = datamodule.train_dataset[0]
         self.img_height, self.img_width = example_img.shape[-2:]  # (height, width)
 
         if model in ['cnn','CNN']:
@@ -84,7 +77,7 @@ class Viewer():
         
         self.transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.247, 0.243, 0.261)),
+            transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
         ])
 
     def change_curr_dirs(self, dif):
@@ -134,8 +127,7 @@ class Viewer():
                 img = img[y_start:y_end,x_start:x_end]
                 
             input_img = self.transform(img).unsqueeze(0)
-            mask = torch.ones((1,1,22,40))
-            output = self.module.model(input_img, mask)
+            output = self.module.model(input_img)
 
             cam = self.drawCAM(self.img_width, self.img_height)
 
