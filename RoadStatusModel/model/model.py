@@ -34,7 +34,7 @@ class CNNModel(nn.Module):
     def forward(self, x):
         x = self.sequential(x)
         self.featuremap = x
-        x = torch.flatten(x, 1)
+        x = torch.flatten(x, 1) # 배치 차원을 제외하고 평탄화
         x = self.fc(x)
         return x
 

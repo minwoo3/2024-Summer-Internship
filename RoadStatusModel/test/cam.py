@@ -2,13 +2,10 @@ import csv, cv2, torch, sys, os
 import argparse, getpass
 import numpy as np
 from PIL import Image
-import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 import torch.nn.functional as F
-from torchvision import transforms
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.module_v4 import CNNModule, ResnetModule
-from data.datamodule_v3 import RoadStadusDataModule
+from model.module import CNNModule, ResnetModule
+from data.datamodule import RoadStatusDataModule
 
 def csvreader(csv_dir):
     with open(csv_dir, 'r', newline='') as f:
@@ -19,24 +16,6 @@ def csvreader(csv_dir):
         labels.append(int(label))
     print('Read CSV Successfully')
     return paths, labels
-
-def ptf(pts,img):
-    tl, tr, bl, br = pts
-    pts1 = np.float32([tl, tr, bl, br])
-
-    w1 = abs(br[0]-bl[0])
-    w2 = abs(tr[0]-tl[0])
-    width = int(max([w1,w2]))
-    h1 = abs(br[1]-tr[1])
-    h2 = abs(bl[1]-tl[1])
-    height = int(max([h1,h2]))
-
-    pts2 = np.float32([[0,0],[width-1,0],[0, height-1],[width-1,height-1]])
-
-    transform_mat = cv2.getPerspectiveTransform(pts1,pts2)
-
-    result = cv2.warpPerspective(img, transform_mat, (width, height))
-    return result, transform_mat
 
 class Viewer():
     def __init__(self, csv_path, index, model, transform_flag):
@@ -54,11 +33,11 @@ class Viewer():
 
         self.classes = ['clean','dirty']
         opt, batch_size = 1e-5, 16
-        datamodule = RoadStadusDataModule(ckpt_name = args.checkpoint, batch_size = batch_size, 
+        self.datamodule = RoadStatusDataModule(ckpt_name = args.checkpoint, batch_size = batch_size, 
                                                             transform_flag = self.transform_flag)
-        datamodule.setup(stage='fit')
+        self.datamodule.setup(stage='test')
 
-        example_img, _, _ = datamodule.train_dataset[0]
+        example_img, _, _ = self.datamodule.test_dataset[0]
         self.img_height, self.img_width = example_img.shape[-2:]  # (height, width)
 
         if model in ['cnn','CNN']:
@@ -74,11 +53,6 @@ class Viewer():
             raise ValueError("Invalid model name. Choose from ['cnn', 'CNN', 'resnet', 'res', 'ResNet']")
     
         self.module_name = self.module.__class__.__name__
-        
-        self.transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
-        ])
 
     def change_curr_dirs(self, dif):
         self.curr_i += dif
@@ -103,55 +77,28 @@ class Viewer():
         cam_resized = np.array(Image.fromarray((cam * 255).astype(np.uint8)).resize((width, height), Image.Resampling.LANCZOS)) / 255.0
         return cam_resized
         
-
     def view(self):
         while True:
-            curr_img_path = self.img_path[self.curr_i]
-            curr_img_label = self.img_label[self.curr_i]
-            if 'NIA' in curr_img_path or '벚꽃' in curr_img_path:
-                original_img = cv2.imread(self.t7_dir + curr_img_path)
-            elif 'GeneralCase' in curr_img_path:
-                original_img = cv2.imread(self.sata_dir + curr_img_path)
-            
-            original_img = cv2.resize(original_img,(1280, 720))
-            img = original_img.copy()
-
-            if self.transform_flag == 'ptf':
-                pts1 = [[330, 500], [950, 500], [100, 650], [1200, 650]]
-                img, transform_mat = ptf(pts1,img)
-                inverse_mat = np.linalg.inv(transform_mat)
-
-            elif self.transform_flag == 'crop':
-                x_start, x_end = 0, img.shape[1]
-                y_start, y_end = int(img.shape[0]*0.4), int(img.shape[0]*0.8)
-                img = img[y_start:y_end,x_start:x_end]
-                
-            input_img = self.transform(img).unsqueeze(0)
-            output = self.module.model(input_img)
+            curr_img, curr_label, curr_path = self.datamodule.test_dataset[self.curr_i]
+            if 'NIA' in curr_path or '벚꽃' in curr_path:
+                original_img = cv2.imread(self.t7_dir + curr_path)
+            elif 'GeneralCase' in curr_path:
+                original_img = cv2.imread(self.sata_dir + curr_path)
+            original_img = cv2.resize(original_img, (self.img_width, self.img_height))
+            output = self.module.model(curr_img)
 
             cam = self.drawCAM(self.img_width, self.img_height)
 
-            pred_class = torch.argmax(output, dim=1)
-
-            if self.transform_flag == 'ptf':
-                img_cam = cv2.warpPerspective(cam, inverse_mat, (1280,720))
-            elif self.transform_flag == 'crop':
-                img_cam = np.zeros(original_img.shape[:2])
-                img_cam[y_start:y_end,x_start:x_end] = cam
-            else:
-                img_cam = cam
-
-            heatmap = cv2.applyColorMap(np.uint8(255 * img_cam), cv2.COLORMAP_JET)
+            pred_class = torch.argmax(output)
+            
+            heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
             heatmap = np.float32(heatmap) / 255
             overlay = heatmap + np.float32(original_img / 255)
             overlay = overlay / np.max(overlay)
 
-            cv2.putText(overlay, f"{curr_img_path} {self.classes[curr_img_label]} {self.curr_i}/{len(self.img_path)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,255,0), 2)
-            cv2.putText(overlay, f"Label: {self.classes[curr_img_label]} / Pred: {self.classes[pred_class]}",(10, 40),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,255,0), 2)
-            # for x, y in pts1:
-            #     cv2.circle(overlay, (x, y), 10, (0, 255, 0), -1)
+            cv2.putText(overlay, f"{curr_path} {self.classes[curr_label]} {self.curr_i}/{len(self.img_path)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,255,0), 2)
+            cv2.putText(overlay, f"Label: {self.classes[curr_label]} / Pred: {self.classes[pred_class]}",(10, 40),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,255,0), 2)
             cv2.imshow('overlay',overlay)
-            # cv2.imshow('img',img)
 
             pressed = cv2.waitKeyEx(15)
             if pressed == 27: break # Esc

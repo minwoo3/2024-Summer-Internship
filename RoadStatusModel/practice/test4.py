@@ -3,7 +3,7 @@ import cv2
 import sys, os
 import PIL.Image as pil
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from data.dataset_v4 import RoadStatusDataset
+from data.dataset import RoadStatusDataset
 
 lane_bin = '0.bin'
 curb_bin = '0_curb.bin'

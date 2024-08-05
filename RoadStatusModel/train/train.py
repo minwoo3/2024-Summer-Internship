@@ -7,8 +7,8 @@ from datetime import datetime
 from pytorch_lightning.strategies import DDPStrategy
 from pytorch_lightning.callbacks import ModelCheckpoint, TQDMProgressBar, EarlyStopping
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.module_v4 import ResnetModule, CNNModule
-from data.datamodule_v3 import RoadStadusDataModule
+from model.module import ResnetModule, CNNModule
+from data.datamodule import RoadStatusDataModule
 
 username = getpass.getuser()
 ssd_dir = f'/media/{username}/T7/2024-Summer-Internship'
@@ -27,7 +27,7 @@ if args.model in ['cnn','CNN']:
     else:
         ckpt_name = args.checkpoint
     print(ckpt_name,'will be save at', ckpt_dir+'/'+ckpt_name+'.ckpt')
-    datamodule = RoadStadusDataModule(ckpt_name = ckpt_name, batch_size = batch_size, transform_flag = args.transform)
+    datamodule = RoadStatusDataModule(ckpt_name = ckpt_name, batch_size = batch_size, transform_flag = args.transform)
     datamodule.setup(stage='fit')
     example_img, _, _ = datamodule.train_dataset[0]
     transformed_img_size = example_img.shape[-2:]  # (height, width)
@@ -42,7 +42,7 @@ elif args.model in ['resnet','res','ResNet']:
     else:
          ckpt_name = args.checkpoint
     print(ckpt_name,'will be save at', ckpt_dir+ckpt_name+'.ckpt')
-    datamodule = RoadStadusDataModule(ckpt_name = ckpt_name, batch_size = batch_size, transform_flag = args.transform)
+    datamodule = RoadStatusDataModule(ckpt_name = ckpt_name, batch_size = batch_size, transform_flag = args.transform)
     datamodule.setup(stage='fit')
     example_img, _, _ = datamodule.train_dataset[0]
     transformed_img_size = example_img.shape[-2:]  # (height, width)
@@ -69,7 +69,6 @@ trainer = pl.Trainer(
     callbacks=callbacks,
     precision=precision
 )
-
 
 ######## Train & Validation #######
 trainer.fit(module, datamodule)

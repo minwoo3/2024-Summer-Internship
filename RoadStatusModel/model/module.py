@@ -14,20 +14,13 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision.models import resnet18, resnet34, resnet50
 from torchmetrics.classification import BinaryAccuracy
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.model_v4 import CNNModel
+from model.model import CNNModel
 
 def csvwriter(csv_dir, target_list):
     with open(csv_dir, 'w', newline="") as file:
         writer = csv.writer(file)
         writer.writerows(target_list)
-        # for item in target_list:
-        #     writer.writerow(item)
     print(f'List Saved at {csv_dir} Successfully')
-
-def txtwriter(txt_dir, target_list):
-    with open(txt_dir, 'w', newline="") as file:
-        file.write('\n'.join(target_list))
-    print(f'List Saved at {txt_dir} Succesfully')
     
 class CNNModule(pl.LightningModule):
     def __init__(self, opt, img_width, img_height, ckpt_name):
@@ -39,8 +32,7 @@ class CNNModule(pl.LightningModule):
         
         self.class_amount = [110928,30588] # clean, dirty
         self.class_weight = [1- x/sum(self.class_amount) for x in self.class_amount]
-        # self.class_weight = torch.tensor(self.class_weight, device = self.device)
-
+        
         self.ckpt_name = ckpt_name
         self.ssd_dir = f'/media/{getpass.getuser()}/T7/2024-Summer-Internship/scene/{self.ckpt_name}'
 
