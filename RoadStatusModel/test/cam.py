@@ -5,8 +5,7 @@ from PIL import Image
 import torch.nn.functional as F
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from model.module import CNNModule, ResnetModule
-from data.datamodule import RoadStatusDataModule
-
+from data.dataset import RoadStatusDataset
 def csvreader(csv_dir):
     with open(csv_dir, 'r', newline='') as f:
         data = list(csv.reader(f))
@@ -33,11 +32,9 @@ class Viewer():
 
         self.classes = ['clean','dirty']
         opt, batch_size = 1e-5, 16
-        self.datamodule = RoadStatusDataModule(ckpt_name = args.checkpoint, batch_size = batch_size, 
-                                                            transform_flag = self.transform_flag)
-        self.datamodule.setup(stage='test')
 
-        example_img, _, _ = self.datamodule.test_dataset[0]
+        self.dataset = RoadStatusDataset(annotation_file= args.path, transform_flag= args.transform)
+        example_img, _, _ = self.dataset[0]
         self.img_height, self.img_width = example_img.shape[-2:]  # (height, width)
 
         if model in ['cnn','CNN']:
@@ -69,7 +66,6 @@ class Viewer():
         cam = torch.zeros(activation_map.shape[1:], dtype=torch.float32)
         for i in range(len(class_weights_gap)):
             cam += class_weights_gap[i]*activation_map[i,:,:]
-
         cam = F.relu(cam)
         cam = cam - cam.min()
         cam = cam / cam.max()
@@ -79,7 +75,7 @@ class Viewer():
         
     def view(self):
         while True:
-            curr_img, curr_label, curr_path = self.datamodule.test_dataset[self.curr_i]
+            curr_img, curr_label, curr_path = self.dataset[self.curr_i]
             if 'NIA' in curr_path or '벚꽃' in curr_path:
                 original_img = cv2.imread(self.t7_dir + curr_path)
             elif 'GeneralCase' in curr_path:

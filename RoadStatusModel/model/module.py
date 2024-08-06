@@ -1,8 +1,4 @@
-import csv
-import torch
-import getpass
-import sys, os, io
-import torchmetrics
+import csv, torch, getpass, sys, os, io, torchmetrics
 import numpy as np
 import torch.nn as nn
 import PIL.Image as Image
@@ -11,7 +7,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torchvision.models import resnet18, resnet34, resnet50
+from torchvision.models import resnet18
 from torchmetrics.classification import BinaryAccuracy
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from model.model import CNNModel

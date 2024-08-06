@@ -21,12 +21,7 @@ class RoadStatusDataset(Dataset):
         self.sata_dir = f'/media/{self.username}/sata-ssd'
         self.transform_flag = transform_flag
         
-        if self.transform_flag == 'ptf':
-            self.transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
-            ])
-        elif self.transform_flag == 'crop':
+        if self.transform_flag == 'crop':
             self.transform = transforms.Compose([
                 transforms.Resize((self.height,self.width)),
                 transforms.Lambda(lambda img: img.crop((0, int(img.height*0.5), img.width, int(img.height*0.9)))),
@@ -39,6 +34,7 @@ class RoadStatusDataset(Dataset):
                 transforms.ToTensor(),
                 transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
             ])
+
     def openbin(self,dir):
         if '연석' in dir:
             if 'NIA' in dir:
@@ -68,48 +64,26 @@ class RoadStatusDataset(Dataset):
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
         mask = cv2.dilate(mask, kernel, iterations=1)
         return mask
-
-    def perspectiveTF(self,img):
-        img = np.array(img)
-        img = cv2.resize(img,(self.width, self.height))
-        pts1 = np.float32([[330, 500], [950, 500], [100, 650], [1200, 650]])
-        tl, tr, bl, br = pts1[0], pts1[1], pts1[2], pts1[3]
-        w1 = abs(br[0]-bl[0])
-        w2 = abs(tr[0]-tl[0])
-        width = int(max([w1,w2]))
-        h1 = abs(br[1]-tr[1])
-        h2 = abs(bl[1]-tl[1])
-        height = int(max([h1,h2]))
-        pts2 = np.float32([[0,0],[width-1,0],[0, height-1],[width-1,height-1]])
-        transform_mat = cv2.getPerspectiveTransform(pts1,pts2)
-        result = cv2.warpPerspective(np.array(img), transform_mat, (self.width, self.height))
-        return pil.fromarray(result)
     
     def stack(self,img,mask):
-        # np.zeros((행,열))
-        combined = np.zeros((self.height, self.width,4), dtype=np.uint8)
-        # PIL.Image((열,행))
-        img = np.array(img.resize((self.width,self.height)))
+        combined = np.zeros((self.height, self.width,4), dtype=np.uint8) # np.zeros((행,열))
+        img = np.array(img.resize((self.width,self.height))) # PIL.Image((열,행))
         combined[:,:,:3] = img.astype(np.uint8)
         combined[:,:,3] = mask
         return pil.fromarray(combined)
 
     def __getitem__(self, idx):
-        # /NIA2021/10009/image0/10009_009.jpg,0
-        if ('NIA' in self.img_path[idx]) or ('벚꽃' in self.img_path[idx]):
+        if ('NIA' in self.img_path[idx]) or ('벚꽃' in self.img_path[idx]): # /NIA2021/10009/image0/10009_009.jpg,0
             img = pil.open(self.t7_dir+self.img_path[idx])
         elif ('GeneralCase' in self.img_path[idx]):
             img = pil.open(self.sata_dir+self.img_path[idx])
-
         mask = torch.ones((self.mask_height,self.mask_width))
+        
         if self.transform_flag == "mask":
             curb_path = f'{self.sata_dir}/camera_inference/연석/{self.img_path[idx][1:-4]}.bin'
             lane_path = f'{self.sata_dir}/camera_inference/차선/{self.img_path[idx][1:-4]}.bin'
             mask = self.getmask(curb_path, lane_path)
-            img = self.stack(img,mask)
-
-        if self.transform_flag == 'ptf':
-            img = self.perspectiveTF(img)      
+            img = self.stack(img,mask)     
         
         x = self.transform(img)
         y = self.img_label[idx]
