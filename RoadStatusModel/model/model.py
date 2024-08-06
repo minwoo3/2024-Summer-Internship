@@ -24,7 +24,7 @@ class CNNModel(nn.Module):
             nn.MaxPool2d(2, 2)
         )
         self._get_fc_input_dim(img_width,img_height)
-        self.fc = nn.Linear(self.feature_c*self.feature_w*self.feature_h, 2)
+        self.fc = nn.Linear(self.feature_c*self.feature_w*self.feature_h, 1)
     
     def _get_fc_input_dim(self, img_width, img_height):
         x = torch.randn(1,4,img_width,img_height)

@@ -38,8 +38,12 @@ class CNNModule(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         im, label, path = batch 
         im, label = im.to(self.device), label.to(self.device)
-        pred = self.model(im)
-        train_loss = F.cross_entropy(pred, label, weight = torch.tensor(self.class_weight, device = 'cuda'))
+        
+        pred = self.model(im).squeeze(1) #[16,1] -> [16]
+        self.class_weight = torch.tensor(self.class_weight, device=self.device)
+        class_weights = self.class_weight[label]
+        train_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=class_weights)
+        
         batch_size = im.size(0)
         self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size, sync_dist = True)
         return train_loss 
@@ -47,8 +51,12 @@ class CNNModule(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         im, label, path = batch 
         im, label = im.to(self.device), label.to(self.device)
-        pred = self.model(im)
-        val_loss = F.cross_entropy(pred, label, weight = torch.tensor(self.class_weight, device = 'cuda'))
+        
+        pred = self.model(im).squeeze(1)
+        self.class_weight = torch.tensor(self.class_weight, device=self.device)
+        class_weights = self.class_weight[label]
+        val_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=class_weights)
+        
         batch_size = im.size(0)
         self.log('val/loss', val_loss, on_step=True, on_epoch=True, prog_bar=True,batch_size=batch_size, sync_dist = True)
         return val_loss
@@ -56,12 +64,16 @@ class CNNModule(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         ims, labels, paths = batch
         ims, labels = ims.to(self.device), labels.to(self.device)
-        pred = self.model(ims)
-        test_loss = F.cross_entropy(pred, labels, weight = torch.tensor(self.class_weight, device = 'cuda'))
+        
+        pred = self.model(ims).squeeze(1)
+        self.class_weight = torch.tensor(self.class_weight, device=self.device)
+        class_weights = self.class_weight[labels]
+        test_loss = F.binary_cross_entropy_with_logits(pred, labels.float(), weight=class_weights)
+        
         batch_size = ims.size(0)
         self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
         
-        pred_class = torch.argmax(torch.softmax(pred, dim=1), dim=1)
+        pred_class = (torch.sigmoid(pred) > 0.5).long()
         self.confusion_matrix(pred_class, labels)
         self.accuracy(pred_class, labels)
         
