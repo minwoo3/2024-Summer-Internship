@@ -83,9 +83,10 @@ class RoadStatusDataset(Dataset):
             curb_path = f'{self.sata_dir}/camera_inference/연석/{self.img_path[idx][1:-4]}.bin'
             lane_path = f'{self.sata_dir}/camera_inference/차선/{self.img_path[idx][1:-4]}.bin'
             mask = self.getmask(curb_path, lane_path)
-            img = self.stack(img,mask)     
-        
+            img = self.stack(img,mask)
+            
         x = self.transform(img)
+        x[:,:self.height//2,:] = 0
         y = self.img_label[idx]
         return x, y, self.img_path[idx]
     

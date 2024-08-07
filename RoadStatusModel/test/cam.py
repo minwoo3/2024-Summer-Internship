@@ -50,6 +50,7 @@ class Viewer():
             raise ValueError("Invalid model name. Choose from ['cnn', 'CNN', 'resnet', 'res', 'ResNet']")
     
         self.module_name = self.module.__class__.__name__
+        self.mask, self.cam = False, False
 
     def change_curr_dirs(self, dif):
         self.curr_i += dif
@@ -60,6 +61,14 @@ class Viewer():
             print('first of list')
             self.curr_i += dif
 
+    def applymask(self):
+        if self.mask == False: self.mask = True
+        else: self.mask = False
+    
+    def applycam(self):
+        if self.cam == False: self.cam = True
+        else: self.cam = False
+
     def drawCAM(self, width, height):
         activation_map = self.module.featuremap.squeeze().cpu()
         class_weights_gap = F.adaptive_avg_pool2d(activation_map,(1,1)).squeeze()
@@ -67,8 +76,11 @@ class Viewer():
         for i in range(len(class_weights_gap)):
             cam += class_weights_gap[i]*activation_map[i,:,:]
         cam = F.relu(cam)
+        # print(max(map(max,cam)).item())
         cam = cam - cam.min()
         cam = cam / cam.max()
+        # cam = (cam > 0.6) * cam
+
         cam = cam.detach().numpy()
         cam_resized = np.array(Image.fromarray((cam * 255).astype(np.uint8)).resize((width, height), Image.Resampling.LANCZOS)) / 255.0
         return cam_resized
@@ -76,25 +88,36 @@ class Viewer():
     def view(self):
         while True:
             curr_img, curr_label, curr_path = self.dataset[self.curr_i]
-            if 'NIA' in curr_path or '벚꽃' in curr_path:
-                original_img = cv2.imread(self.t7_dir + curr_path)
-            elif 'GeneralCase' in curr_path:
-                original_img = cv2.imread(self.sata_dir + curr_path)
-            original_img = cv2.resize(original_img, (self.img_width, self.img_height))
-            output = self.module.model(curr_img)
-
-            cam = self.drawCAM(self.img_width, self.img_height)
-
-            pred_class = torch.argmax(output)
             
-            heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
-            heatmap = np.float32(heatmap) / 255
-            overlay = heatmap + np.float32(original_img / 255)
-            overlay = overlay / np.max(overlay)
+            if 'NIA' in curr_path or '벚꽃' in curr_path:
+                show_img = cv2.imread(self.t7_dir + curr_path)
+            elif 'GeneralCase' in curr_path:
+                show_img = cv2.imread(self.sata_dir + curr_path)
+            show_img = cv2.resize(show_img, (self.img_width, self.img_height))
 
-            cv2.putText(overlay, f"{curr_path} {self.classes[curr_label]} {self.curr_i}/{len(self.img_path)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,255,0), 2)
-            cv2.putText(overlay, f"Label: {self.classes[curr_label]} / Pred: {self.classes[pred_class]}",(10, 40),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,255,0), 2)
-            cv2.imshow('overlay',overlay)
+            # curr_img[:,:self.img_height//2,:] = 0
+            output = self.module.model(curr_img.unsqueeze(0))
+            
+            pred = torch.sigmoid(output.squeeze(1))
+            
+            pred_class = (pred>0.5).long()
+            
+            if self.cam == True:
+                cam = self.drawCAM(self.img_width, self.img_height)
+                heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_MAGMA)
+                heatmap = np.float32(heatmap) / 255
+                overlay = heatmap + np.float32(show_img / 255)
+                show_img = overlay / np.max(overlay)
+
+            if self.mask == True:
+                mask = np.array(curr_img[3,:,:]).astype(np.uint8)
+                show_img_uint8 = (show_img * 255).astype(np.uint8)
+                show_img = cv2.bitwise_and(show_img_uint8, show_img_uint8, mask=mask)
+                show_img = show_img.astype(np.float32) / 255
+
+            cv2.putText(show_img, f"{args.checkpoint}/ {curr_path}  {self.curr_i}/{len(self.img_path)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,0), 2)
+            cv2.putText(show_img, f"Label: {self.classes[curr_label]} / Pred: {self.classes[pred_class]} / {pred.item():.2%}",(10, 40),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,0), 2)
+            cv2.imshow('overlay',show_img)
 
             pressed = cv2.waitKeyEx(15)
             if pressed == 27: break # Esc
@@ -102,6 +125,8 @@ class Viewer():
             elif pressed == 54: self.change_curr_dirs(1) # 6
             elif pressed == 52: self.change_curr_dirs(-1) # 4
             elif pressed == 50: self.change_curr_dirs(-100) # 2
+            elif pressed == ord('m'): self.applymask()
+            elif pressed == ord('c'): self.applycam()
 
 
 username = getpass.getuser()
