@@ -50,7 +50,7 @@ class Viewer():
             raise ValueError("Invalid model name. Choose from ['cnn', 'CNN', 'resnet', 'res', 'ResNet']")
     
         self.module_name = self.module.__class__.__name__
-        self.mask, self.cam = False, False
+        self.mask, self.hsv, self.cam = False, False, True
 
     def change_curr_dirs(self, dif):
         self.curr_i += dif
@@ -69,6 +69,10 @@ class Viewer():
         if self.cam == False: self.cam = True
         else: self.cam = False
 
+    # def applyhsvmask(self):
+    #     if self.hsv == False: self.hsv = True
+    #     else: self.hsv = False
+
     def drawCAM(self, width, height):
         activation_map = self.module.featuremap.squeeze().cpu()
         class_weights_gap = F.adaptive_avg_pool2d(activation_map,(1,1)).squeeze()
@@ -77,14 +81,35 @@ class Viewer():
             cam += class_weights_gap[i]*activation_map[i,:,:]
         cam = F.relu(cam)
         # print(max(map(max,cam)).item())
+        # print(min(map(min,cam)).item())
+    
         cam = cam - cam.min()
         cam = cam / cam.max()
-        # cam = (cam > 0.6) * cam
+        cam = (cam > 0.6) * cam
 
         cam = cam.detach().numpy()
         cam_resized = np.array(Image.fromarray((cam * 255).astype(np.uint8)).resize((width, height), Image.Resampling.LANCZOS)) / 255.0
         return cam_resized
-        
+
+    def hsvmask(self,img):
+        # print(img.shape)
+        b = img[:,:,0]
+        g = img[:,:,1]
+        r = img[:,:,2]
+        b_eq = cv2.equalizeHist(b)
+        g_eq = cv2.equalizeHist(g)
+        r_eq = cv2.equalizeHist(r)
+        adjust = cv2.merge((b_eq,g_eq,r_eq))
+        hsv = cv2.cvtColor(adjust, cv2.COLOR_BGR2HSV)
+
+        lower_green = np.array([35, 40, 40])
+        upper_green = np.array([85, 255, 255])
+        mask = cv2.inRange(hsv, lower_green, upper_green)
+        result = cv2.bitwise_and(cv2.cvtColor(img,cv2.COLOR_BGR2RGB),cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+                                , mask = cv2.bitwise_not(mask))
+        result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+        return result
+
     def view(self):
         while True:
             curr_img, curr_label, curr_path = self.dataset[self.curr_i]
@@ -94,14 +119,18 @@ class Viewer():
             elif 'GeneralCase' in curr_path:
                 show_img = cv2.imread(self.sata_dir + curr_path)
             show_img = cv2.resize(show_img, (self.img_width, self.img_height))
-
+            # print(show_img.shape)
             # curr_img[:,:self.img_height//2,:] = 0
+            
+            
+            
             output = self.module.model(curr_img.unsqueeze(0))
             
             pred = torch.sigmoid(output.squeeze(1))
             
-            pred_class = (pred>0.5).long()
+            pred_class = (pred>0.3).long()
             
+
             if self.cam == True:
                 cam = self.drawCAM(self.img_width, self.img_height)
                 heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_MAGMA)
@@ -115,6 +144,8 @@ class Viewer():
                 show_img = cv2.bitwise_and(show_img_uint8, show_img_uint8, mask=mask)
                 show_img = show_img.astype(np.float32) / 255
 
+            
+
             cv2.putText(show_img, f"{args.checkpoint}/ {curr_path}  {self.curr_i}/{len(self.img_path)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,0), 2)
             cv2.putText(show_img, f"Label: {self.classes[curr_label]} / Pred: {self.classes[pred_class]} / {pred.item():.2%}",(10, 40),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,0), 2)
             cv2.imshow('overlay',show_img)
@@ -125,8 +156,11 @@ class Viewer():
             elif pressed == 54: self.change_curr_dirs(1) # 6
             elif pressed == 52: self.change_curr_dirs(-1) # 4
             elif pressed == 50: self.change_curr_dirs(-100) # 2
+            # elif pressed == ord('0'): self.change_curr_dirs(-100) # 2
+            # elif pressed == ord('0'): self.change_curr_dirs(-100) # 2          
             elif pressed == ord('m'): self.applymask()
             elif pressed == ord('c'): self.applycam()
+            # elif pressed == ord('h'): self.applyhsvmask()
 
 
 username = getpass.getuser()
