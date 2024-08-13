@@ -41,7 +41,7 @@ class Viewer():
             ssd_dir = f'{self.t7_dir}/checkpoint/cnn'
             self.module = CNNModule.load_from_checkpoint(f'{ssd_dir}/{args.checkpoint}.ckpt',
                                                     img_width=self.img_width, img_height=self.img_height, 
-                                                    opt=opt, ckpt_name = args.checkpoint)
+                                                    opt=opt, ckpt_name = args.checkpoint, loss_weight_mode = args.weight)
         elif model in ['resnet','res','ResNet']:
             ssd_dir = f'{self.t7_dir}/checkpoint/resnet'
             self.module = ResnetModule.load_from_checkpoint(f'{ssd_dir}/{args.checkpoint}.ckpt',
@@ -170,6 +170,7 @@ parser.add_argument('-m', '--model', dest='model', action = 'store')
 parser.add_argument('-c', '--ckpt', dest='checkpoint', action = 'store')
 parser.add_argument('-i', '--index', dest='index',type = int, default = 0)
 parser.add_argument('-t', '--transform', dest='transform', action = 'store')
+parser.add_argument('-w', '--weight', dest = 'weight', action = 'store', default = None)
 args = parser.parse_args()
 
 torch.cuda.empty_cache()

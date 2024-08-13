@@ -19,7 +19,7 @@ def csvwriter(csv_dir, target_list):
     print(f'List Saved at {csv_dir} Successfully')
     
 class CNNModule(pl.LightningModule):
-    def __init__(self, opt, img_width, img_height, ckpt_name):
+    def __init__(self, opt, img_width, img_height, ckpt_name, loss_weight_mode = None):
         super(CNNModule, self).__init__()
         self.opt = opt
         self.model = CNNModel(img_width, img_height)
@@ -27,9 +27,10 @@ class CNNModule(pl.LightningModule):
         self.accuracy = BinaryAccuracy()
         
         self.class_amount = [110928,30588] # clean, dirty
-        self.class_weight = [1- x/sum(self.class_amount) for x in self.class_amount]
+        self.pos_weight = np.sqrt([self.class_amount[0]/self.class_amount[1]])
+        self.weight = [1- x/sum(self.class_amount) for x in self.class_amount]
         
-
+        self.weight_mode = loss_weight_mode
         self.ckpt_name = ckpt_name
         self.ssd_dir = f'/media/{getpass.getuser()}/T7/2024-Summer-Internship/scene/{self.ckpt_name}'
 
@@ -41,12 +42,17 @@ class CNNModule(pl.LightningModule):
         im, label = im.to(self.device), label.to(self.device)
         
         pred = self.model(im).squeeze(1) #[16,1] -> [16]
-        # self.class_weight = torch.tensor(self.class_weight, device=self.device)
-        # class_weights = self.class_weight[label]
-        # train_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=class_weights)
-        
-        self.pos_weight = torch.tensor([self.class_amount[0]/self.class_amount[1]],device = 'cuda')
-        train_loss = F.binary_cross_entropy_with_logits(pred, label.float(), pos_weight=self.pos_weight)
+
+        if self.weight_mode == 'weight':
+            self.weight = torch.tensor(self.weight, device=self.device)
+            weights = self.weight[label]
+            train_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=weights)
+
+        elif self.weight_mode == 'pos_weight':
+            train_loss = F.binary_cross_entropy_with_logits(pred, label.float(), pos_weight=torch.tensor(self.pos_weight, device= 'cuda'))
+
+        elif self.weight_mode == None:
+            train_loss = F.binary_cross_entropy_with_logits(pred, label.float())
         
         batch_size = im.size(0)
         self.log('train/loss', train_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size, sync_dist = True)
@@ -57,12 +63,17 @@ class CNNModule(pl.LightningModule):
         im, label = im.to(self.device), label.to(self.device)
         
         pred = self.model(im).squeeze(1)
-        # self.class_weight = torch.tensor(self.class_weight, device=self.device)
-        # class_weights = self.class_weight[label]
-        # val_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=class_weights)
+        
+        if self.weight_mode == 'weight':
+            self.weight = torch.tensor(self.weight, device=self.device)
+            weights = self.weight[label]
+            val_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=weights)
 
-        self.pos_weight = torch.tensor([self.class_amount[0]/self.class_amount[1]],device = 'cuda')
-        val_loss = F.binary_cross_entropy_with_logits(pred, label.float(), pos_weight=self.pos_weight)
+        elif self.weight_mode == 'pos_weight':
+            val_loss = F.binary_cross_entropy_with_logits(pred, label.float(), pos_weight=torch.tensor(self.pos_weight, device= 'cuda'))
+
+        elif self.weight_mode == None:
+            val_loss = F.binary_cross_entropy_with_logits(pred, label.float())
         
         batch_size = im.size(0)
         self.log('val/loss', val_loss, on_step=True, on_epoch=True, prog_bar=True,batch_size=batch_size, sync_dist = True)
@@ -72,11 +83,16 @@ class CNNModule(pl.LightningModule):
         ims, labels, paths = batch
         ims, labels = ims.to(self.device), labels.to(self.device)
         
-        pred = self.model(ims).squeeze(1)
-        # self.class_weight = torch.tensor(self.class_weight, device=self.device)
-        # class_weights = self.class_weight[labels]
-        # test_loss = F.binary_cross_entropy_with_logits(pred, labels.float(), weight=class_weights)
-        test_loss = F.binary_cross_entropy_with_logits(pred, labels.float(), pos_weight=self.pos_weight)
+        if self.weight_mode == 'weight':
+            self.weight = torch.tensor(self.weight, device=self.device)
+            weights = self.weight[label]
+            test_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=weights)
+
+        elif self.weight_mode == 'pos_weight':
+            test_loss = F.binary_cross_entropy_with_logits(pred, label.float(), pos_weight=torch.tensor(self.pos_weight, device= 'cuda'))
+
+        elif self.weight_mode == None:
+            test_loss = F.binary_cross_entropy_with_logits(pred, label.float())
 
         batch_size = ims.size(0)
         self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)

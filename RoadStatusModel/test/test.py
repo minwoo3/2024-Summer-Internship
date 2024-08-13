@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--model', dest='model', action = 'store')
 parser.add_argument('-c', '--ckpt', dest='checkpoint', action = 'store')
 parser.add_argument('-t', '--transform', dest='transform', action = 'store')
+parser.add_argument('-w', '--weight', dest = 'weight', action = 'store', default = None)
 
 args = parser.parse_args()
 opt, batch_size = 1e-5, 16
@@ -28,8 +29,8 @@ transformed_img_size = example_img.shape[-2:]  # (height, width)
 if args.model in ['cnn','CNN']:
     ssd_dir = f'/media/{username}/T7/2024-Summer-Internship/checkpoint/cnn'
     module = CNNModule.load_from_checkpoint(f'{ssd_dir}/{args.checkpoint}.ckpt', 
-                                            img_width=transformed_img_size[1], 
-                                            img_height=transformed_img_size[0], opt=opt, ckpt_name = args.checkpoint)
+                                            img_width=transformed_img_size[1], img_height=transformed_img_size[0],
+                                              opt=opt, ckpt_name = args.checkpoint, loss_weight_mode = args.weight)
 elif args.model in ['resnet','res','ResNet']:
     ssd_dir = f'/media/{username}/T7/2024-Summer-Internship/checkpoint/resnet'
     module = ResnetModule.load_from_checkpoint(f'{ssd_dir}/{args.checkpoint}.ckpt',
