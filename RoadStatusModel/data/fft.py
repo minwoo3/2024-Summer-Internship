@@ -58,7 +58,7 @@ class Viewer():
     def view(self):
         while True:
             curr_img, curr_label, curr_path = self.dataset[self.curr_i]
-            curr_mask = np.array(curr_img[3,:,:]).astype(np.uint8)
+            curr_mask = np.array(curr_img[1,:,:]).astype(np.uint8)
             
             if 'NIA' in curr_path or '벚꽃' in curr_path:
                 img = cv2.imread(self.t7_dir + curr_path)
@@ -81,16 +81,23 @@ class Viewer():
 
             
                 # contours, hierachy = cv2.findContours(img.astype(np.uint8),cv2.RETR_LIST,cv2.CHAIN_APPROX_NONE)
-                # dst = np.zeros((self.img_height, self.img_width), np.uint8)
+                # dst = np.zeros((self.img_height, self.img_width, 3), np.uint8)
                 # for i in range(len(contours)):
-                #     cv2.drawContours(dst,contours, i, (255,255,255), 1, cv2.LINE_AA)
+                #     epsilon = 0.03 * cv2.arcLength(contours[i], closed = True)
+                #     approx = cv2.approxPolyDP(contours[i], epsilon, closed =True)
+                #     cv2.drawContours(dst, [approx], -1, (0,255,0), 2)
+                    
+                    # cv2.drawContours(dst,contours, i, (255,255,255), 1, cv2.LINE_AA)
+                    # x, y, w, h = cv2.boundingRect(contours[i])
+                    # cv2.rectangle(dst, (x,y), (x+w, y+h), (0, 255, 0), 3)
+                # cv2.imshow('dst', dst)    
                 # for cnt in contours:
                 #     hull = cv2.convexHull(cnt)
                 #     cont_img = cv2.drawContours(dst, [hull], 0, (0,0,255),2)
             cv2.putText(img, f"{curr_path} kernel size : {self.kernel_size}, {self.curr_i}/{len(self.dataset)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,0,255), 2)
             cv2.putText(img, f"median filter: {self.median_flag}",(10, 40),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,0,255), 2)
             cv2.imshow('img',img)
-            # cv2.imshow('dst', dst)
+            
 
 
             pressed = cv2.waitKeyEx(15)

@@ -69,10 +69,6 @@ class Viewer():
         if self.cam == False: self.cam = True
         else: self.cam = False
 
-    # def applyhsvmask(self):
-    #     if self.hsv == False: self.hsv = True
-    #     else: self.hsv = False
-
     def drawCAM(self, width, height):
         activation_map = self.module.featuremap.squeeze().cpu()
         class_weights_gap = F.adaptive_avg_pool2d(activation_map,(1,1)).squeeze()
@@ -80,8 +76,6 @@ class Viewer():
         for i in range(len(class_weights_gap)):
             cam += class_weights_gap[i]*activation_map[i,:,:]
         cam = F.relu(cam)
-        # print(max(map(max,cam)).item())
-        # print(min(map(min,cam)).item())
     
         cam = cam - cam.min()
         cam = cam / cam.max()
@@ -139,11 +133,10 @@ class Viewer():
                 show_img = overlay / np.max(overlay)
 
             if self.mask == True:
-                mask = np.array(curr_img[3,:,:]).astype(np.uint8)
+                mask = np.array(curr_img[1,:,:]).astype(np.uint8)
                 show_img_uint8 = (show_img * 255).astype(np.uint8)
                 show_img = cv2.bitwise_and(show_img_uint8, show_img_uint8, mask=mask)
                 show_img = show_img.astype(np.float32) / 255
-
             
 
             cv2.putText(show_img, f"{args.checkpoint}/ {curr_path}  {self.curr_i}/{len(self.img_path)}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,0), 2)
@@ -155,12 +148,10 @@ class Viewer():
             elif pressed == 56: self.change_curr_dirs(100) # 8
             elif pressed == 54: self.change_curr_dirs(1) # 6
             elif pressed == 52: self.change_curr_dirs(-1) # 4
-            elif pressed == 50: self.change_curr_dirs(-100) # 2
-            # elif pressed == ord('0'): self.change_curr_dirs(-100) # 2
-            # elif pressed == ord('0'): self.change_curr_dirs(-100) # 2          
+            elif pressed == 50: self.change_curr_dirs(-100) # 2     
             elif pressed == ord('m'): self.applymask()
             elif pressed == ord('c'): self.applycam()
-            # elif pressed == ord('h'): self.applyhsvmask()
+
 
 
 username = getpass.getuser()

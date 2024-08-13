@@ -76,6 +76,7 @@ class CNNModule(pl.LightningModule):
         # self.class_weight = torch.tensor(self.class_weight, device=self.device)
         # class_weights = self.class_weight[labels]
         # test_loss = F.binary_cross_entropy_with_logits(pred, labels.float(), weight=class_weights)
+        self.pos_weight = torch.tensor([self.class_amount[0]/self.class_amount[1]],device = 'cuda')
         test_loss = F.binary_cross_entropy_with_logits(pred, labels.float(), pos_weight=self.pos_weight)
 
         batch_size = ims.size(0)
