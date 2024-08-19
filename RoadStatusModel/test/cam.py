@@ -103,6 +103,9 @@ class Viewer():
                                 , mask = cv2.bitwise_not(mask))
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
         return result
+    
+    def change_label(self,dif):
+        self.dataset[self.curr_i][1] = dif
 
     def view(self):
         while True:
@@ -116,13 +119,11 @@ class Viewer():
             # print(show_img.shape)
             # curr_img[:,:self.img_height//2,:] = 0
             
-            
-            
             output = self.module.model(curr_img.unsqueeze(0))
             
             pred = torch.sigmoid(output.squeeze(1))
             
-            pred_class = (pred>0.3).long()
+            pred_class = (pred>0.5).long()
             
 
             if self.cam == True:
@@ -133,7 +134,7 @@ class Viewer():
                 show_img = overlay / np.max(overlay)
 
             if self.mask == True:
-                mask = np.array(curr_img[1,:,:]).astype(np.uint8)
+                mask = np.array(curr_img[3,:,:]).astype(np.uint8)
                 show_img_uint8 = (show_img * 255).astype(np.uint8)
                 show_img = cv2.bitwise_and(show_img_uint8, show_img_uint8, mask=mask)
                 show_img = show_img.astype(np.float32) / 255
@@ -145,10 +146,12 @@ class Viewer():
 
             pressed = cv2.waitKeyEx(15)
             if pressed == 27: break # Esc
-            elif pressed == 56: self.change_curr_dirs(100) # 8
-            elif pressed == 54: self.change_curr_dirs(1) # 6
-            elif pressed == 52: self.change_curr_dirs(-1) # 4
-            elif pressed == 50: self.change_curr_dirs(-100) # 2     
+            elif pressed == 56 or pressed == ord('w'): self.change_curr_dirs(100) # 8
+            elif pressed == 54 or pressed == ord('d'): self.change_curr_dirs(1) # 6
+            elif pressed == 52 or pressed == ord('a'): self.change_curr_dirs(-1) # 4
+            elif pressed == 50 or pressed == ord('s'): self.change_curr_dirs(-100) # 2
+            elif pressed == 49: self.change_label(1) # 1
+            elif pressed == 48: self.change_label(0) # 0
             elif pressed == ord('m'): self.applymask()
             elif pressed == ord('c'): self.applycam()
 

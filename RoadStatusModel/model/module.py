@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from model.model import CNNModel
 
 def csvwriter(csv_dir, target_list):
-    with open(csv_dir, 'w', newline="") as file:
+    with open(csv_dir, 'a', newline="") as file:
         writer = csv.writer(file)
         writer.writerows(target_list)
     print(f'List Saved at {csv_dir} Successfully')
@@ -99,12 +99,14 @@ class CNNModule(pl.LightningModule):
     def test_epoch_end(self, outputs):
         cm = self.confusion_matrix.compute().cpu()
         accuracy = self.accuracy.compute().cpu()
+        # cm, accuracy = cm.numpy(), accuracy.numpy()
         print("Confusion Matrix:\n", cm.numpy())
         print("Test Accuracy:", accuracy.numpy())
+        # result = [self.ckpt_name,cm[0][0],cm[0][1],cm[1][0], cm[1][1],accuracy]
         self.confusion_matrix.reset()
         self.accuracy.reset()
-        false_batch = [path for batch in outputs for path in batch]
-        csvwriter(f'{self.ssd_dir}/{self.ckpt_name}_result.csv', false_batch)
+        # false_batch = [path for batch in outputs for path in batch]
+        # csvwriter(f'{self.ssd_dir}/result.csv', result)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt)

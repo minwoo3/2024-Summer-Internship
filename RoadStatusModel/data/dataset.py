@@ -26,13 +26,13 @@ class RoadStatusDataset(Dataset):
                 transforms.Resize((self.height,self.width)),
                 transforms.Lambda(lambda img: img.crop((0, int(img.height*0.5), img.width, int(img.height*0.9)))),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=(0.5, 0.0), std=(0.247, 1.0)),
+                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
             ])
         else:
             self.transform = transforms.Compose([
                 transforms.Resize((self.height,self.width)),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=(0.5, 0.0), std=(0.247, 1.0)),
+                transforms.Normalize(mean=(0.4914, 0.4822, 0.4465, 0.0), std=(0.247, 0.243, 0.261, 1.0)),
             ])
 
     def openbin(self,dir):
@@ -66,17 +66,17 @@ class RoadStatusDataset(Dataset):
         return mask
     
     def stack(self,img,mask):
-        combined = np.zeros((self.height, self.width,2), dtype=np.uint8) # np.zeros((행,열))
+        combined = np.zeros((self.height, self.width,4), dtype=np.uint8) # np.zeros((행,열))
         img = np.array(img.resize((self.width,self.height))) # PIL.Image((열,행))
-        combined[:,:,0] = img.astype(np.uint8)
-        combined[:,:,1] = mask
+        combined[:,:,:3] = img.astype(np.uint8)
+        combined[:,:,3] = mask
         return pil.fromarray(combined)
 
     def __getitem__(self, idx):
         if ('NIA' in self.img_path[idx]) or ('벚꽃' in self.img_path[idx]): # /NIA2021/10009/image0/10009_009.jpg,0
-            img = pil.open(self.t7_dir+self.img_path[idx]).convert("L")
+            img = pil.open(self.t7_dir+self.img_path[idx])
         elif ('GeneralCase' in self.img_path[idx]):
-            img = pil.open(self.sata_dir+self.img_path[idx]).convert("L")
+            img = pil.open(self.sata_dir+self.img_path[idx])
         mask = torch.ones((self.mask_height,self.mask_width))
         
         if self.transform_flag == "mask":
@@ -86,7 +86,9 @@ class RoadStatusDataset(Dataset):
             img = self.stack(img,mask)
             
         x = self.transform(img)
-        x[:,:self.height//2,:] = 0
+        # x[:,:int(self.height*0.5),:] = 0
+        # x[:,:int(self.height*0.6),:] = 0
+        # x[:,int(self.height*0.8):,:] = 0
         y = self.img_label[idx]
         return x, y, self.img_path[idx]
     
