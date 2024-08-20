@@ -6,8 +6,8 @@ import argparse
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from model.module_v4 import CNNModule, ResnetModule
-from data.datamodule_v3 import RoadStadusDataModule
+from model.module import CNNModule, ResnetModule
+from data.datamodule_v3 import RoadStatusDataModule
 
 username = getpass.getuser()
 
@@ -18,7 +18,7 @@ parser.add_argument('-t', '--transform', dest='transform', action = 'store')
 
 args = parser.parse_args()
 opt, batch_size = 1e-5, 16
-datamodule = RoadStadusDataModule(ckpt_name = args.checkpoint, batch_size = batch_size, transform_flag = args.transform)
+datamodule = RoadStatusDataModule(ckpt_name = args.checkpoint, batch_size = batch_size, transform_flag = args.transform)
 
 datamodule.setup(stage='fit')
 
