@@ -75,17 +75,17 @@ class Viewer():
         kernel = np.ones((self.kernel_size, self.kernel_size), np.uint8)
         mask = cv2.dilate(mask, kernel, iterations=1)
         
-        return mask
+        return mask, curb_x, curb_y, lane_x, lane_y
 
     def getmask(self):
         if self.mask == 2:
-            mask = self.makemask(2)
+            mask, curb_x, curb_y, lane_x, lane_y = self.makemask(2)
         elif self.mask == 1:
-            mask = self.makemask(1)
+            mask, curb_x, curb_y, lane_x, lane_y = self.makemask(1)
         elif self.mask == 0:
-            mask = self.makemask(0)
+            mask, curb_x, curb_y, lane_x, lane_y = self.makemask(0)
 
-        return mask
+        return mask, curb_x, curb_y, lane_x, lane_y
 
     def changemask(self):
         self.mask += 1
@@ -107,13 +107,14 @@ class Viewer():
             try:
                 img = cv2.imread(curr_img_path)
                 img = cv2.resize(img,(1280, 720))
-                mask = self.getmask()
+                mask, curb_x, curb_y, lane_x, lane_y = self.getmask()
                 extracted_img = cv2.bitwise_and(img,img,mask = mask)
 
-                # for x, y in zip(lane_x, lane_y):
-                #     cv2.circle(extracted_img,(int(x),int(y)),3,(255,0,0),thickness= -1)
-                # for x, y in zip(curb_x, curb_y):
-                #     cv2.circle(extracted_img,(int(x),int(y)),3,(0,255,0),thickness= -1)
+                for x, y in zip(lane_x, lane_y):
+                    cv2.circle(extracted_img,(int(x),int(y)),3,(255,0,0),thickness= -1)
+                for x, y in zip(curb_x, curb_y):
+                    cv2.circle(extracted_img,(int(x),int(y)),3,(0,255,0),thickness= -1)
+                    
                 cv2.putText(extracted_img, f"{self.img_path[self.curr_i]} {self.classes[curr_img_label]} {self.curr_i}/{len(self.img_path)} kernel: {self.kernel_size}",(10, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255), 2)
                 cv2.imshow('img',extracted_img)
 
@@ -124,10 +125,10 @@ class Viewer():
 
             pressed = cv2.waitKeyEx(15)
             if pressed == 27: self.save(self.curr_i); break # Esc
-            elif pressed == 56: self.change_curr_dirs(100) # 8
-            elif pressed == 54: self.change_curr_dirs(1) # 6
-            elif pressed == 52: self.change_curr_dirs(-1) # 4
-            elif pressed == 50: self.change_curr_dirs(-100) # 2
+            elif pressed == 56 or pressed == ord('w'): self.change_curr_dirs(100) # 8
+            elif pressed == 54 or pressed == ord('d'): self.change_curr_dirs(1) # 6
+            elif pressed == 52 or pressed == ord('a'): self.change_curr_dirs(-1) # 4
+            elif pressed == 50 or pressed == ord('s'): self.change_curr_dirs(-100) # 2
             elif pressed == 48: self.img_label[self.curr_i] = 0; self.change_curr_dirs(1)
             elif pressed == 49: self.img_label[self.curr_i] = 1; self.change_curr_dirs(1)
             elif pressed == ord('o'): self.changemask()
