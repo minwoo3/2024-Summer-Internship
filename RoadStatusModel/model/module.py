@@ -29,7 +29,6 @@ class CNNModule(pl.LightningModule):
         self.class_amount = [110928,30588] # clean, dirty
         self.class_weight = [1- x/sum(self.class_amount) for x in self.class_amount]
         
-
         self.ckpt_name = ckpt_name
         self.ssd_dir = f'/media/{getpass.getuser()}/T7/2024-Summer-Internship/scene/{self.ckpt_name}'
 
@@ -40,11 +39,7 @@ class CNNModule(pl.LightningModule):
         im, label, path = batch 
         im, label = im.to(self.device), label.to(self.device)
         
-        pred = self.model(im).squeeze(1) #[16,1] -> [16]
-        # self.class_weight = torch.tensor(self.class_weight, device=self.device)
-        # class_weights = self.class_weight[label]
-        # train_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=class_weights)
-        
+        pred = self.model(im).squeeze(1)
         self.pos_weight = torch.tensor([self.class_amount[0]/self.class_amount[1]],device = 'cuda')
         train_loss = F.binary_cross_entropy_with_logits(pred, label.float(), pos_weight=self.pos_weight)
         
@@ -57,10 +52,6 @@ class CNNModule(pl.LightningModule):
         im, label = im.to(self.device), label.to(self.device)
         
         pred = self.model(im).squeeze(1)
-        # self.class_weight = torch.tensor(self.class_weight, device=self.device)
-        # class_weights = self.class_weight[label]
-        # val_loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight=class_weights)
-
         self.pos_weight = torch.tensor([self.class_amount[0]/self.class_amount[1]],device = 'cuda')
         val_loss = F.binary_cross_entropy_with_logits(pred, label.float(), pos_weight=self.pos_weight)
         
@@ -73,16 +64,8 @@ class CNNModule(pl.LightningModule):
         ims, labels = ims.to(self.device), labels.to(self.device)
         
         pred = self.model(ims).squeeze(1)
-        # self.class_weight = torch.tensor(self.class_weight, device=self.device)
-        # class_weights = self.class_weight[labels]
-        # test_loss = F.binary_cross_entropy_with_logits(pred, labels.float(), weight=class_weights)
-        self.pos_weight = torch.tensor([self.class_amount[0]/self.class_amount[1]],device = 'cuda')
-        test_loss = F.binary_cross_entropy_with_logits(pred, labels.float(), pos_weight=self.pos_weight)
-
-        batch_size = ims.size(0)
-        self.log('test/loss', test_loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
         
-        pred_class = (torch.sigmoid(pred) > 0.3).long()
+        pred_class = (torch.sigmoid(pred) > 0.5).long()
         self.confusion_matrix(pred_class, labels)
         self.accuracy(pred_class, labels)
         
@@ -99,14 +82,12 @@ class CNNModule(pl.LightningModule):
     def test_epoch_end(self, outputs):
         cm = self.confusion_matrix.compute().cpu()
         accuracy = self.accuracy.compute().cpu()
-        # cm, accuracy = cm.numpy(), accuracy.numpy()
         print("Confusion Matrix:\n", cm.numpy())
         print("Test Accuracy:", accuracy.numpy())
-        # result = [self.ckpt_name,cm[0][0],cm[0][1],cm[1][0], cm[1][1],accuracy]
         self.confusion_matrix.reset()
         self.accuracy.reset()
-        # false_batch = [path for batch in outputs for path in batch]
-        # csvwriter(f'{self.ssd_dir}/result.csv', result)
+        false_batch = [path for batch in outputs for path in batch]
+        csvwriter(f'{self.ssd_dir}/result.csv', false_batch)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt)
