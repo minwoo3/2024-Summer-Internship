@@ -20,6 +20,7 @@ ex) python3 train.py -m 'cnn' -c 'CNNModule_014_2' -t 'mask'
 argument: -m model, -c ckpt name, -t transform type
 ex) python3 test.py -m 'cnn' -c 'CNNModule_014_2' -t 'mask'
 *test set 변경 시: data/datamodule.py line 28 에서 'test.csv' 변경
+*crop 적용/미적용 시: data/dataset.py 에서 crop 여부 설정
 ```
 
 #### CAM(class activation map)
