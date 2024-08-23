@@ -36,7 +36,7 @@ no mask, BCE Loss(no weight) : CNNModule_008_2.ckpt
 4channel, BCE Loss(no weight) : CNNModule_013_4.ckpt
 4channel, BCE Loss(weight 3.16) : CNNModule_013_2.ckpt
 4channel, BCE Loss(weight 3.16), crop : CNNModule_014.ckpt
-4channel, BCE Loss(weight 1.77), crop : CNNModule_014_2.ckpt
+4channel, BCE Loss(weight 1.77), crop : CNNModule_014_2.ckpt    <---- Latest
 *weight 수정: model/module.py에서 train_step 함수 수정
 *mask 수정: train.py 컴파일 시 -t argument 입력 X
 ```
